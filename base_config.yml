@@ -1,10 +1,7 @@
 # Project config file
 global:
-    use_gpu: 1
     img_size: 224
     max_seed_value: 20
-    standard_model: "base"
-    epochs: 100
 
 # Define dataset specific parameters
 olivine:

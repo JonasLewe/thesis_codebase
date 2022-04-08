@@ -3,7 +3,7 @@ import json
 import numpy as np
 import matplotlib.cm as cm
 import tensorflow as tf
-from utils.utils import show, get_img_array, get_pil_img, get_img_draw
+from utils.img import show, get_img_array, get_pil_img, get_img_draw
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from tensorflow.keras.preprocessing.image import array_to_img, img_to_array
 
