@@ -1,0 +1,25 @@
+# Project config file
+global:
+    use_gpu: 1
+    img_size: 224
+    max_seed_value: 20
+    standard_model: "base"
+    epochs: 100
+
+# Define dataset specific parameters
+olivine:
+    input_data: "Data/Input_Data/processed_img_data/generator_input_data/thin_section_dataset"
+    class_1_img_folder: "Data/Input_Data/processed_img_data/Olivine_Images"
+    polygon_label_folder: "Data/Labels/olivine/polygon_label_files"
+    voc_label_folder: "Data/Labels/olivine/voc_data/SegmentationClass"
+cats_vs_dogs:
+    input_data: "Data/Input_Data/other_datasets/cats_vs_dogs"
+    class_1_img_folder: ""
+    polygon_label_folder: ""
+    voc_label_folder: ""
+
+# Define model specific parameters
+base:
+    last_conv_layer_name: 'last_conv_layer'
+vgg:
+    last_conv_layer_name: 'block5_conv3'
