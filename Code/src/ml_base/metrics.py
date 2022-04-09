@@ -1,7 +1,8 @@
 import os
 import numpy as np
 from skimage.transform import resize
-from ml_base.grad_CAM import cam_pipeline, get_json_img_name, draw_json_polygons
+from ml_base.grad_CAM import cam_pipeline 
+from utils.img import get_json_img_name, draw_json_polygons
 import tensorflow as tf
 
 
@@ -14,11 +15,11 @@ def calc_iou_score(y_true, y_pred):
 
 def calc_mean_iou_score(class_1_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, cam_img_output_path='', threshold=0.01):
     iou_scores = []
-    for json_file_name in polygon_label_folder:
+    for json_file_name in os.listdir(polygon_label_folder):
         img_name = get_json_img_name(json_file_name)
         image_id = "_".join(img_name.split('_')[:3])
         json_img = draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, IMAGE_SIZE)
-        pred_heatmap = cam_pipeline(class_1_img_folder, img_name, json_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, display=False, draw_text=False)
+        pred_heatmap = cam_pipeline(class_1_img_folder, img_name, json_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, draw_text=False)
         predicted_binary_heatmap = np.where(pred_heatmap > threshold, 1, 0)
         heatmap_size = predicted_binary_heatmap.shape
 

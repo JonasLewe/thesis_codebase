@@ -59,16 +59,18 @@ now = datetime.now()
 current_time = now.strftime("%d_%m_%Y-%H_%M_%S")
 # LOG_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "tensorboard", "logs", f"{user_config["dataset"]}_{gpu_status}_seed{max_seed_value}_{current_time}")
 PARENT_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "model_tuning", user_config["parent_dir"])
+RUN_DIR = os.path.join(PARENT_DIR, f"{user_config['dataset']}_{user_config['model_type']}_{current_time}") 
 
 
 if __name__=="__main__":
     # create parent folder here...
     Path(PARENT_DIR).mkdir(parents=True, exist_ok=True)
+    Path(RUN_DIR).mkdir(parents=True, exist_ok=False)
     print("\nNum GPUs Available:", len(tf.config.experimental.list_physical_devices("GPU")))
     for seed_value in range(1, max_seed_value): 
         try:
             # create folders for every run
-            SUB_DIR = os.path.join(PARENT_DIR, f"seed={seed_value}")
+            SUB_DIR = os.path.join(RUN_DIR, f"seed={seed_value}")
             TENSORBOARD_DIR = os.path.join(SUB_DIR, "tensorboard")
             GRAD_CAM_IMGS_DIR = os.path.join(SUB_DIR, "grad_cam_imgs")
             os.makedirs(SUB_DIR)    
@@ -93,9 +95,9 @@ if __name__=="__main__":
                                                          last_conv_layer_name, 
                                                          cam_img_output_path=GRAD_CAM_IMGS_DIR)
             logging.log_data(model, history, accuracy, mean_iou_score)
-            logging.save_best_model(model, mean_iou_score, seed_value, PARENT_DIR)
+            logging.save_best_model(model, mean_iou_score, seed_value, RUN_DIR)
             print(f"Mean IoU score: {mean_iou_score}")
         except BaseException as error:
             print(f"Error: {error}")
             # remove all folders for current run
-            shutil.rmtree(SUB_DIR)
+            shutil.rmtree(RUN_DIR)

@@ -1,4 +1,5 @@
 import os
+import cv2
 import numpy as np
 import PIL
 import json
@@ -11,7 +12,7 @@ def show(img):
     plt.show()
 
 
-def get_img_array(img_path, size=(224,224), expand_dims=False, normalize=False):
+def get_img_array(img_path, size=(224,224), expand_dims=True, normalize=False):
     # 'img' is a PIL image of size 224x224
     img = image.load_img(img_path, target_size=size)
 
@@ -29,22 +30,29 @@ def get_img_array(img_path, size=(224,224), expand_dims=False, normalize=False):
     return array
 
 
-def get_pil_img(img_path, size=(224,224)):
-    img_array = get_img_array(img_path, size)
-    img = PIL.Image.fromarray(img_array)
+def get_pil_img(img_path, image_size):
+    # img_array = get_img_array(img_path, size)
+    # print(f"DEBUG img_array: {img_array}")
+    # print(f"DEBUG img_array.shape: {img_array.shape}")
+    # img = PIL.Image.fromarray(img_array)
+    # img = image.load_img(img_path, target_size=size)
+    # print(f"DEBUG img: {img}")
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, image_size)
+    img = PIL.Image.fromarray(img)
     return img
 
 
-def get_img_draw(img_path, size=(224,224)):
-    img = get_pil_img(img_path, size)
+def get_img_draw(img_path, image_size=(224,224)):
+    img = get_pil_img(img_path, image_size)
     draw = PIL.ImageDraw.Draw(img)
-    return img, draw
+    return draw
 
 
 def get_json_img_name(json_file_name):
     img_name = f"{json_file_name.split('.')[0]}.jpg"
     return img_name
-
 
 
 def draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, image_size):
@@ -66,3 +74,14 @@ def draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_lab
         for j in range(len(polygon_coordinates)-1): # iterate over coordinates of single crystal
             draw.line(polygon_coordinates[j] + polygon_coordinates[j+1], fill='red', width=3)
     return img
+
+
+def get_img_and_draw(ROOT_DIR, img_name, IMAGE_SIZE):
+    img_path = os.path.join(ROOT_DIR, img_name)
+    # print(img_path)
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # img = cv2.resize(img, IMAGE_SIZE)
+    img = PIL.Image.fromarray(img)
+    draw = ImageDraw.Draw(img)
+    return img, draw
