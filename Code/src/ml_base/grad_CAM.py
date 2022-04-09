@@ -1,9 +1,8 @@
 import os
-import json
 import numpy as np
 import matplotlib.cm as cm
 import tensorflow as tf
-from utils.img import show, get_img_array, get_pil_img, get_img_draw
+from utils.img import show, get_img_array 
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from tensorflow.keras.preprocessing.image import array_to_img, img_to_array
 
@@ -128,28 +127,3 @@ def cam_pipeline(BASE_IMG_DIR, img_name, json_img, IMAGE_SIZE, model, last_conv_
         cam_display(json_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path)
     return heatmap
 
-
-def get_json_img_name(json_file_name):
-    img_name = f"{json_file_name.split('.')[0]}.jpg"
-    return img_name
-
-
-def draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, image_size):
-    img_path = os.path.join(class_1_img_folder, img_name)
-    img = get_pil_img(img_path, image_size)
-    draw = get_img_draw(img_path, image_size)
-    
-    # Opening JSON file
-    json_path = os.path.join(polygon_label_folder, json_file_name)
-    with open(json_path) as json_file:
-        json_data = json.load(json_file)
-
-    # iterate over all olivine polygons
-    num_of_polygons = len(json_data['shapes'])
-    for i in range(num_of_polygons): # iterate over different olivine crystals
-        polygon_coordinates = [tuple(x) for x in json_data['shapes'][i]['points']]
-        # print(polygon_coordinates)
-        polygon_coordinates.append(polygon_coordinates[0]) # polygon needs to be closed
-        for j in range(len(polygon_coordinates)-1): # iterate over coordinates of single crystal
-            draw.line(polygon_coordinates[j] + polygon_coordinates[j+1], fill='red', width=3)
-    return img

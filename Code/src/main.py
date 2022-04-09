@@ -1,6 +1,7 @@
 import os
 import shutil
 import yaml
+from pathlib import Path
 from datetime import datetime
 from argparse import ArgumentParser
 
@@ -36,7 +37,7 @@ polygon_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]
 voc_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["voc_label_folder"])
 last_conv_layer_name = os.path.join(ROOT_DIR, base_config[user_config["model_type"]]["last_conv_layer_name"])
 image_size = (base_config["global"]["img_size"], base_config["global"]["img_size"])
-max_seed_value = base_config["max_seed_value"]
+max_seed_value = base_config["global"]["max_seed_value"]
 
 epochs = user_config["epochs"]
 use_gpu = user_config["use_gpu"]
@@ -52,7 +53,7 @@ if not use_gpu:
 # Only import tensorflow after setting environmant variables!
 import tensorflow as tf
 from ml_base import evaluation, train, seeds, metrics
-from logging import logging
+from log_data import logging
 
 now = datetime.now()
 current_time = now.strftime("%d_%m_%Y-%H_%M_%S")
@@ -62,7 +63,7 @@ PARENT_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "model_tuning", user_
 
 if __name__=="__main__":
     # create parent folder here...
-    os.makedirs(PARENT_DIR)
+    Path(PARENT_DIR).mkdir(parents=True, exist_ok=True)
     print("\nNum GPUs Available:", len(tf.config.experimental.list_physical_devices("GPU")))
     for seed_value in range(1, max_seed_value): 
         try:
@@ -82,7 +83,7 @@ if __name__=="__main__":
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0)
             ]
 
-            model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, model_name=args.model_type, epochs=epochs)
+            model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, model_name=user_config["model_type"], epochs=epochs)
             accuracy = evaluation.evaluate_model(root_image_folder, image_size, model, history, verbose=True, log_dir=SUB_DIR)
             mean_iou_score = metrics.calc_mean_iou_score(class_1_img_folder,
                                                          image_size, 
@@ -96,6 +97,5 @@ if __name__=="__main__":
             print(f"Mean IoU score: {mean_iou_score}")
         except BaseException as error:
             print(f"Error: {error}")
+            # remove all folders for current run
             shutil.rmtree(SUB_DIR)
-            shutil.rmtree(TENSORBOARD_DIR)
-            shutil.rmtree(GRAD_CAM_IMGS_DIR)

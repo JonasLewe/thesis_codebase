@@ -1,5 +1,7 @@
+import os
 import numpy as np
 import PIL
+import json
 from matplotlib import pyplot as plt
 from tensorflow.keras.preprocessing import image
 
@@ -37,3 +39,30 @@ def get_img_draw(img_path, size=(224,224)):
     img = get_pil_img(img_path, size)
     draw = PIL.ImageDraw.Draw(img)
     return img, draw
+
+
+def get_json_img_name(json_file_name):
+    img_name = f"{json_file_name.split('.')[0]}.jpg"
+    return img_name
+
+
+
+def draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, image_size):
+    img_path = os.path.join(class_1_img_folder, img_name)
+    img = get_pil_img(img_path, image_size)
+    draw = get_img_draw(img_path, image_size)
+    
+    # Opening JSON file
+    json_path = os.path.join(polygon_label_folder, json_file_name)
+    with open(json_path) as json_file:
+        json_data = json.load(json_file)
+
+    # iterate over all olivine polygons
+    num_of_polygons = len(json_data['shapes'])
+    for i in range(num_of_polygons): # iterate over different olivine crystals
+        polygon_coordinates = [tuple(x) for x in json_data['shapes'][i]['points']]
+        # print(polygon_coordinates)
+        polygon_coordinates.append(polygon_coordinates[0]) # polygon needs to be closed
+        for j in range(len(polygon_coordinates)-1): # iterate over coordinates of single crystal
+            draw.line(polygon_coordinates[j] + polygon_coordinates[j+1], fill='red', width=3)
+    return img
