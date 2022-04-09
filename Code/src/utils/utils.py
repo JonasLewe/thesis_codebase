@@ -12,7 +12,7 @@ def calc_std(img_tensor_list):
 
 
 def get_best_iou_score(subdir):
-    best_model_pattern = "Best_Model_iou=\d.\d+.h5"
+    best_model_pattern = "Best_Model_seed=\d_iou=\d.\d+.h5"
     pattern = re.compile(best_model_pattern)
     for filepath in os.listdir(subdir):
         if pattern.match(filepath):

@@ -92,7 +92,7 @@ if __name__=="__main__":
                                                          last_conv_layer_name, 
                                                          cam_img_output_path=GRAD_CAM_IMGS_DIR)
             logging.log_data(model, history, accuracy, mean_iou_score)
-            logging.save_best_model(model, PARENT_DIR)
+            logging.save_best_model(model, mean_iou_score, seed_value, PARENT_DIR)
             print(f"Mean IoU score: {mean_iou_score}")
         except BaseException as error:
             print(f"Error: {error}")
