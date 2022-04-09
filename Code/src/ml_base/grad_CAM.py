@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.cm as cm
 import tensorflow as tf
-from utils.img import show, get_img_array 
+from utils.img import show, get_img_array, get_pil_img 
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from tensorflow.keras.preprocessing.image import array_to_img, img_to_array
 
@@ -101,14 +101,12 @@ def cam_display(src_img, superimposed_img, img_name, preds, draw_text, cam_img_o
         draw.text((10,0),text,(0,0,0),font=font)
     if cam_img_output_path:
         new_img.save(os.path.join(cam_img_output_path, img_name))
-    # else:
-    #     show(new_img)
     
 
 def cam_pipeline(BASE_IMG_DIR, img_name, json_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, draw_text=True):
     img_path = os.path.join(BASE_IMG_DIR, img_name)
-    img_array = get_img_array(img_path, size=IMAGE_SIZE)
-    img = Image.fromarray(img_array)
+    img_array = get_img_array(img_path, size=IMAGE_SIZE, expand_dims=True)
+    img = get_pil_img(img_path, IMAGE_SIZE)
 
     # Remove last layer's softmax
     model.layers[-1].activation = None

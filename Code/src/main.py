@@ -11,14 +11,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 ROOT_DIR = "../../"
 
 parser = ArgumentParser()
-# parser.add_argument("-d", "--dataset", type=str, default="olivine",
-#                     help="Datasets available: "olivine", "cats_vs_dogs"")
-# parser.add_argument("-m", "--model_type", type=str, default="base",
-#                     help="Model types available: "base", "vgg"")
-# parser.add_argument("-c", "--cam_save", type=int, default=0,
-#                     help="Specify if cam images should be saved.")
-# parser.add_argument("-tp", "--tuning_parameter", type=str, default="model",
-#                     help="Specify if cam images should be saved.")
 parser.add_argument("-c", "--config", type=str, default="dummy.yml",
                     help="Specify the config file to be used.")
 args = parser.parse_args()
@@ -35,7 +27,7 @@ root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["
 class_1_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder"])
 polygon_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["polygon_label_folder"])
 voc_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["voc_label_folder"])
-last_conv_layer_name = os.path.join(ROOT_DIR, base_config[user_config["model_type"]]["last_conv_layer_name"])
+last_conv_layer_name = base_config[user_config["model_type"]]["last_conv_layer_name"]
 image_size = (base_config["global"]["img_size"], base_config["global"]["img_size"])
 max_seed_value = base_config["global"]["max_seed_value"]
 

@@ -12,7 +12,7 @@ def show(img):
     plt.show()
 
 
-def get_img_array(img_path, size=(224,224), expand_dims=True, normalize=False):
+def get_img_array(img_path, size=(224,224), expand_dims=False, normalize=False):
     # 'img' is a PIL image of size 224x224
     img = image.load_img(img_path, target_size=size)
 
@@ -31,12 +31,6 @@ def get_img_array(img_path, size=(224,224), expand_dims=True, normalize=False):
 
 
 def get_pil_img(img_path, image_size):
-    # img_array = get_img_array(img_path, size)
-    # print(f"DEBUG img_array: {img_array}")
-    # print(f"DEBUG img_array.shape: {img_array.shape}")
-    # img = PIL.Image.fromarray(img_array)
-    # img = image.load_img(img_path, target_size=size)
-    # print(f"DEBUG img: {img}")
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, image_size)
@@ -83,5 +77,5 @@ def get_img_and_draw(ROOT_DIR, img_name, IMAGE_SIZE):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     # img = cv2.resize(img, IMAGE_SIZE)
     img = PIL.Image.fromarray(img)
-    draw = ImageDraw.Draw(img)
+    draw = PIL.ImageDraw.Draw(img)
     return img, draw
