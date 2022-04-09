@@ -1,5 +1,5 @@
+parent_dir: "debugging"
 dataset: 'olivine'
 model_type: 'base'
 epochs: 100
 use_gpu: 1
-cam_img_output_path: ""

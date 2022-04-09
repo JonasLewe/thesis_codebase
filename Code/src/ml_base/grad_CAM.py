@@ -102,10 +102,11 @@ def cam_display(src_img, superimposed_img, img_name, preds, draw_text, cam_img_o
         draw.text((10,0),text,(0,0,0),font=font)
     if cam_img_output_path:
         new_img.save(os.path.join(cam_img_output_path, img_name))
-    show(new_img)
+    # else:
+    #     show(new_img)
     
 
-def cam_pipeline(BASE_IMG_DIR, img_name, json_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, display=False, draw_text=True):
+def cam_pipeline(BASE_IMG_DIR, img_name, json_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, draw_text=True):
     img_path = os.path.join(BASE_IMG_DIR, img_name)
     img_array = get_img_array(img_path, size=IMAGE_SIZE)
     img = Image.fromarray(img_array)
@@ -121,10 +122,10 @@ def cam_pipeline(BASE_IMG_DIR, img_name, json_img, IMAGE_SIZE, model, last_conv_
     # Generate class activation heatmap
     heatmap = generate_gradcam_heatmap(img_array, model, last_conv_layer_name)
     
-    if display:
+    if cam_img_output_path:
         superimposed_img = get_superimposed_gradcam_img(img, heatmap)
         json_img = json_img.resize(IMAGE_SIZE, Image.ANTIALIAS)
-        #cam_display(json_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path)
+        cam_display(json_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path)
     return heatmap
 
 

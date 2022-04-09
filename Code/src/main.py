@@ -40,7 +40,6 @@ max_seed_value = base_config["max_seed_value"]
 
 epochs = user_config["epochs"]
 use_gpu = user_config["use_gpu"]
-cam_img_output_path = user_config["cam_img_output_path"]
 
 
 gpu_status = "gpu"
@@ -70,11 +69,15 @@ if __name__=="__main__":
             # create folders for every run
             SUB_DIR = os.path.join(PARENT_DIR, f"seed={seed_value}")
             TENSORBOARD_DIR = os.path.join(SUB_DIR, "tensorboard")
+            GRAD_CAM_IMGS_DIR = os.path.join(SUB_DIR, "grad_cam_imgs")
             os.makedirs(SUB_DIR)    
             os.makedirs(TENSORBOARD_DIR)   
+            os.makedirs(GRAD_CAM_IMGS_DIR)
 
             # fix all random seeds according to keras documentation
             seeds.fix_seeds_keras_style(seed_value)
+            
+            # set callbacks for training
             callbacks = [
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0)
             ]
@@ -82,15 +85,17 @@ if __name__=="__main__":
             model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, model_name=args.model_type, epochs=epochs)
             accuracy = evaluation.evaluate_model(root_image_folder, image_size, model, history, verbose=True, log_dir=SUB_DIR)
             mean_iou_score = metrics.calc_mean_iou_score(class_1_img_folder,
-                                                        image_size, 
-                                                        model, 
-                                                        polygon_label_folder, 
-                                                        voc_label_folder, 
-                                                        last_conv_layer_name, 
-                                                        cam_img_output_path)
+                                                         image_size, 
+                                                         model, 
+                                                         polygon_label_folder, 
+                                                         voc_label_folder, 
+                                                         last_conv_layer_name, 
+                                                         cam_img_output_path=GRAD_CAM_IMGS_DIR)
             logging.log_data(model, history, accuracy, mean_iou_score)
+            logging.save_best_model(model, PARENT_DIR)
             print(f"Mean IoU score: {mean_iou_score}")
         except BaseException as error:
             print(f"Error: {error}")
             shutil.rmtree(SUB_DIR)
             shutil.rmtree(TENSORBOARD_DIR)
+            shutil.rmtree(GRAD_CAM_IMGS_DIR)
