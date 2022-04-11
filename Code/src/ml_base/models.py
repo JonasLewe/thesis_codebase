@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Dropout, Conv2D, MaxPooling2D, Dense, Flatte
 
 
 # define basic cnn model
-def define_base_model(input_shape=(224, 224, 3), learn_rate=0.001, additional_metrics=False):
+def define_base_model(learning_rate, input_shape=(224, 224, 3), additional_metrics=False):
     model = Sequential()
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_shape))
     model.add(MaxPooling2D((2, 2)))
@@ -25,7 +25,7 @@ def define_base_model(input_shape=(224, 224, 3), learn_rate=0.001, additional_me
     
     # compile model
     # opt = SGD(lr=0.001, momentum=0.9)
-    opt = Adam(learning_rate=learn_rate)
+    opt = Adam(learning_rate)
     if additional_metrics:
         metrics = METRICS
     else:
@@ -34,7 +34,7 @@ def define_base_model(input_shape=(224, 224, 3), learn_rate=0.001, additional_me
     return model
 
 
-def define_vgg_model(input_shape=(224, 224, 3), index=22, additional_metrics=False):
+def define_vgg_model(learning_rate, input_shape=(224, 224, 3), index=22, additional_metrics=False):
     base_model = VGG19(include_top=False, weights='imagenet', input_shape=input_shape)
     for layer in base_model.layers:
         layer.trainable = False
@@ -55,7 +55,7 @@ def define_vgg_model(input_shape=(224, 224, 3), index=22, additional_metrics=Fal
     # Final layer
     model.add(Dense(1,activation=('sigmoid'),name="activation_1"))
     
-    opt = Adam(learning_rate=0.001)
+    opt = Adam(learning_rate)
     if additional_metrics:
         metrics = METRICS
     else:

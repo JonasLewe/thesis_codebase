@@ -79,7 +79,7 @@ def get_superimposed_gradcam_img(img, heatmap, cam_path="cam.jpg", alpha=0.8, sa
 
 
 def cam_display(src_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path):
-    text = f'IMG_NAME: {img_name}\nPrediction: {preds}'
+    text = f'IMG_NAME: {img_name}\nPrediction: {preds[0][0]}'
     images = [src_img, superimposed_img]
     
     widths, heights = zip(*(i.size for i in images))

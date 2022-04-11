@@ -20,3 +20,6 @@ base:
     last_conv_layer_name: 'last_conv_layer'
 vgg:
     last_conv_layer_name: 'block5_conv3'
+
+# Define xlsx file path
+xlsx_filepath: "training_results.xlsx"

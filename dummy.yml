@@ -1,5 +1,0 @@
-parent_dir: "debugging"
-dataset: 'olivine'
-model_type: 'base'
-epochs: 1
-use_gpu: 1
