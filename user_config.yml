@@ -5,3 +5,4 @@ model_type: 'base'
 epochs: 40 
 batch_size: 32 
 learning_rate: 0.01
+iou_threshold: 0.01

@@ -37,7 +37,7 @@ def calc_iou_score(y_true, y_pred):
 #     return mean_iou
 
 
-def calc_mean_iou_score(class_1_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, cam_img_output_path, threshold=0.01):
+def calc_mean_iou_score(class_1_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, cam_img_output_path, iou_threshold):
     # iou_scores = []
     predicted_binary_added_heatmaps = np.zeros([0])
     ground_truth_added_heatmaps = np.zeros([0])
@@ -46,7 +46,7 @@ def calc_mean_iou_score(class_1_img_folder, IMAGE_SIZE, model, polygon_label_fol
         image_id = "_".join(img_name.split('_')[:3])
         json_img = draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, IMAGE_SIZE)
         pred_heatmap = cam_pipeline(class_1_img_folder, img_name, json_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, draw_text=True)
-        predicted_binary_heatmap = np.where(pred_heatmap > threshold, 1, 0)
+        predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
         heatmap_size = predicted_binary_heatmap.shape
         
         #add all predicted segmentations to one large vector

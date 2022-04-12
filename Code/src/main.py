@@ -1,5 +1,6 @@
 import os
 import shutil
+from cv2 import threshold
 import yaml
 from operator import itemgetter
 from pathlib import Path
@@ -36,6 +37,7 @@ xlsx_filename = base_config["xlsx_filepath"]
 epochs = user_config["epochs"]
 batch_size = user_config["batch_size"]
 learning_rate = user_config["learning_rate"]
+iou_threshold = user_config["iou_threshold"]
 use_gpu = user_config["use_gpu"]
 
 
@@ -49,8 +51,7 @@ if not use_gpu:
 # Only import tensorflow after setting environmant variables!
 import tensorflow as tf
 from ml_base import evaluation, train, seeds, metrics
-from log_data import logging
-from data_analysis import xlsx
+from log_data import logging, xlsx
 
 now = datetime.now()
 current_time = now.strftime("%d_%m_%Y-%H_%M_%S")
@@ -99,6 +100,7 @@ if __name__=="__main__":
                                                          polygon_label_folder, 
                                                          voc_label_folder, 
                                                          last_conv_layer_name, 
+                                                         iou_threshold,
                                                          cam_img_output_path=GRAD_CAM_IMGS_DIR)
             xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
             logging.log_data(model, history, accuracy, mean_iou_score)
@@ -121,6 +123,7 @@ if __name__=="__main__":
                                     epochs, 
                                     learning_rate, 
                                     batch_size, 
+                                    iou_threshold,
                                     max_iou_seed,
                                     max_seed_value,
                                     max_iou_score,
