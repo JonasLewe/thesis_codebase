@@ -54,7 +54,6 @@ from data_analysis import xlsx
 
 now = datetime.now()
 current_time = now.strftime("%d_%m_%Y-%H_%M_%S")
-# LOG_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "tensorboard", "logs", f"{user_config["dataset"]}_{gpu_status}_seed{max_seed_value}_{current_time}")
 PARENT_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "model_tuning", user_config["parent_dir"])
 run_dir_name = f"{user_config['dataset']}_{user_config['model_type']}_{current_time}"
 RUN_DIR = os.path.join(PARENT_DIR, run_dir_name) 
@@ -69,7 +68,7 @@ if __name__=="__main__":
 
     # copy used settings to current folder
     shutil.copy(os.path.join(ROOT_DIR, args.config), os.path.join(RUN_DIR, "settings.yml"))
-    iou_scores = []
+    xlsx_summary = []
 
     for seed_value in range(1, max_seed_value+1): 
         print(53*"#")
@@ -93,7 +92,7 @@ if __name__=="__main__":
             ]
 
             model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, model_name=user_config["model_type"], epochs=epochs, batch_size=batch_size)
-            accuracy = evaluation.evaluate_model(root_image_folder, image_size, model, history, verbose=True, log_dir=SUB_DIR)
+            accuracy, scores = evaluation.evaluate_model(root_image_folder, image_size, model, history, log_dir=SUB_DIR)
             mean_iou_score = metrics.calc_mean_iou_score(class_1_img_folder,
                                                          image_size, 
                                                          model, 
@@ -101,20 +100,32 @@ if __name__=="__main__":
                                                          voc_label_folder, 
                                                          last_conv_layer_name, 
                                                          cam_img_output_path=GRAD_CAM_IMGS_DIR)
-            iou_scores.append((mean_iou_score, seed_value)) 
+            xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
             logging.log_data(model, history, accuracy, mean_iou_score)
             logging.save_best_model(model, mean_iou_score, seed_value, RUN_DIR)
         except BaseException as error:
             print(f"Error: {error}")
             # remove all folders for current run
             shutil.rmtree(RUN_DIR)
+    
+    # get results from best round
+    max_iou_score = max(xlsx_summary, key=itemgetter(0))[0]
+    max_iou_seed = max(xlsx_summary, key=itemgetter(0))[1]
+    max_iou_precision = max(xlsx_summary, key=itemgetter(0))[2][0]
+    max_iou_recall = max(xlsx_summary, key=itemgetter(0))[2][1]
+    max_iou_fscore = max(xlsx_summary, key=itemgetter(0))[2][2]
+    
 
     xlsx.parse_model_output_to_xlsx(run_dir_name, 
                                     user_config["model_type"], 
                                     epochs, 
                                     learning_rate, 
                                     batch_size, 
-                                    max(iou_scores, key=itemgetter(1))[1], 
-                                    max(iou_scores, key=itemgetter(1))[0], 
+                                    max_iou_seed,
+                                    max_seed_value,
+                                    max_iou_score,
+                                    max_iou_precision,
+                                    max_iou_recall,
+                                    max_iou_fscore,
                                     use_gpu,
                                     XLSX_FILE)

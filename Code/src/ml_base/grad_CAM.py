@@ -114,6 +114,7 @@ def cam_pipeline(BASE_IMG_DIR, img_name, json_img, IMAGE_SIZE, model, last_conv_
     # check prediction
     new_image = get_img_array(img_path, expand_dims=True, normalize=True)
     preds = model.predict(new_image)
+    #print(f"Predictions from grad_CAM.py:cam_pipeline: {preds}")
     #print("Predicted:", decode_predictions(preds, top=1)[0])
     
     # Generate class activation heatmap

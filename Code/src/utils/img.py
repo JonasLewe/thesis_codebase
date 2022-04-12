@@ -50,9 +50,10 @@ def get_json_img_name(json_file_name):
 
 
 def draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, image_size):
-    img_path = os.path.join(class_1_img_folder, img_name)
-    img = get_pil_img(img_path, image_size)
-    draw = get_img_draw(img_path, image_size)
+    # img_path = os.path.join(class_1_img_folder, img_name)
+    # img = get_pil_img(img_path, image_size)
+    # draw = get_img_draw(img_path, image_size)
+    img, draw = get_img_and_draw(class_1_img_folder, img_name, image_size)
     
     # Opening JSON file
     json_path = os.path.join(polygon_label_folder, json_file_name)

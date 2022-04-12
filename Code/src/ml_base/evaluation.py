@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report, precision_recall_fscore_support 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
@@ -29,10 +29,11 @@ def summarize_diagnostics(history, log_dir) -> None:
         plt.show()
 
 
-def show_confusion_matrix(model, test_generator, log_dir) -> None:    
+def show_results(model, test_generator, log_dir) -> None:    
     test_steps_per_epoch = np.math.ceil(test_generator.samples / test_generator.batch_size)
 
     predictions = model.predict(test_generator, steps=test_steps_per_epoch)
+    #print(f"Predictions from evaluation.py:show_results: {predictions}")
     predicted_classes = [1 * (x[0]>=0.5) for x in predictions]
     
     true_classes = test_generator.classes
@@ -51,8 +52,13 @@ def show_confusion_matrix(model, test_generator, log_dir) -> None:
     report = classification_report(true_classes, predicted_classes, target_names=class_labels)
     print(report) 
 
+    precision, recall, fscore, _ = precision_recall_fscore_support(true_classes, predicted_classes, average='macro') 
+    scores = [round(precision, 4), round(recall, 4), round(fscore, 4)]
 
-def evaluate_model(img_root_dir, image_size, model, history, verbose=True, log_dir=""):
+    return scores
+
+
+def evaluate_model(img_root_dir, image_size, model, history, log_dir=""):
     test_datagen = ImageDataGenerator(rescale=1.0/255.0)
     test_generator = test_datagen.flow_from_directory(os.path.join(img_root_dir, 'test'),
                                                class_mode='binary',
@@ -64,13 +70,12 @@ def evaluate_model(img_root_dir, image_size, model, history, verbose=True, log_d
     _, acc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
     print('\nAccuracy on test set: %.3f' % (acc * 100.0))
     
-    if verbose:
-        # plot learning curves
-        summarize_diagnostics(history, log_dir)
+    # plot learning curves
+    summarize_diagnostics(history, log_dir)
 
-        # plot confusion matrix
-        show_confusion_matrix(model, test_generator, log_dir)
+    # plot confusion matrix and results
+    scores = show_results(model, test_generator, log_dir)
     
-    return acc
+    return acc, scores
 
 
