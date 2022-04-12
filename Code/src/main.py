@@ -1,6 +1,6 @@
 import os
 import shutil
-from cv2 import threshold
+# from cv2 import threshold
 import yaml
 from operator import itemgetter
 from pathlib import Path
@@ -41,10 +41,8 @@ iou_threshold = user_config["iou_threshold"]
 use_gpu = user_config["use_gpu"]
 
 
-gpu_status = "gpu"
 if not use_gpu:
     # disable GPU
-    gpu_status = "nogpu"
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
