@@ -37,8 +37,7 @@ def calc_iou_score(y_true, y_pred):
 #     return mean_iou
 
 
-def calc_mean_iou_score(class_1_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, cam_img_output_path, iou_threshold):
-    # iou_scores = []
+def calc_mean_iou_score(class_1_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path):
     predicted_binary_added_heatmaps = np.zeros([0])
     ground_truth_added_heatmaps = np.zeros([0])
     for json_file_name in os.listdir(polygon_label_folder):

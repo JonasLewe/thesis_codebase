@@ -27,6 +27,8 @@ def summarize_diagnostics(history, log_dir) -> None:
         plt.savefig(os.path.join(log_dir, "summarized_diagnostics.png"), bbox_inches='tight')
     else:
         plt.show()
+    
+    plt.cla()
 
 
 def show_results(model, test_generator, log_dir) -> None:    
@@ -48,6 +50,8 @@ def show_results(model, test_generator, log_dir) -> None:
         plt.savefig(os.path.join(log_dir, "confusion_matrix.png"))
     else:
         plt.show()
+    
+    plt.cla()
     
     report = classification_report(true_classes, predicted_classes, target_names=class_labels)
     print(report) 

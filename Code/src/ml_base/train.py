@@ -14,13 +14,13 @@ def train_model(img_root_dir, image_size, callbacks=[], additional_metrics=False
     
     # create data generators
     train_datagen = ImageDataGenerator(rescale=1.0/255.0,
-                                       #rotation_range=40,
+                                       rotation_range=40,
                                        #width_shift_range=0.2,
                                        #height_shift_range=0.2,
                                        #shear_range=0.2,
                                        #zoom_range=0.2,
                                        #brightness_range=[0.1,1],
-                                       #horizontal_flip=True,
+                                       horizontal_flip=True,
                                        #fill_mode='nearest'
                                       )
     

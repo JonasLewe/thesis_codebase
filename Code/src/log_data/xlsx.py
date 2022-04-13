@@ -2,9 +2,9 @@
 from openpyxl import load_workbook
 
 
-def parse_model_output_to_xlsx(model_name, model_type, epochs, learning_rate, batch_size, iou_threshold, seed_value, num_of_runs, mean_iou_score, precision, recall, fscore, gpu, xlsx_file):
+def parse_model_output_to_xlsx(model_name, model_type, epochs, learning_rate, batch_size, iou_threshold, seed_value, num_of_runs, mean_iou_score, precision, recall, fscore, gpu, comments, xlsx_file):
     wb = load_workbook(filename=xlsx_file)
     page = wb.active
-    data = [model_name, model_type, epochs, learning_rate, batch_size, iou_threshold, seed_value, num_of_runs, mean_iou_score, precision, recall, fscore, gpu] 
+    data = [model_name, model_type, epochs, learning_rate, batch_size, iou_threshold, seed_value, num_of_runs, mean_iou_score, precision, recall, fscore, gpu, comments] 
     page.append(data)
     wb.save(filename=xlsx_file)

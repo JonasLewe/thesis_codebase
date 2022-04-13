@@ -15,6 +15,8 @@ ROOT_DIR = "../../"
 parser = ArgumentParser()
 parser.add_argument("-c", "--config", type=str, default="user_config.yml",
                     help="Specify the config file to be used.")
+parser.add_argument("--comment", type=str, default="",
+                    help="Add comments to xlsx entry.")
 args = parser.parse_args()
 
 # load custom config data
@@ -57,6 +59,7 @@ PARENT_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "model_tuning", user_
 run_dir_name = f"{user_config['dataset']}_{user_config['model_type']}_{current_time}"
 RUN_DIR = os.path.join(PARENT_DIR, run_dir_name) 
 XLSX_FILE = os.path.join(ROOT_DIR, "Data", "Output_Data", xlsx_filename)
+comments = args.comment
 
 
 if __name__=="__main__":
@@ -129,4 +132,5 @@ if __name__=="__main__":
                                     max_iou_recall,
                                     max_iou_fscore,
                                     use_gpu,
+                                    comments,
                                     XLSX_FILE)
