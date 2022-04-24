@@ -1,4 +1,4 @@
-name: ESA_37
+name: master_thesis
 channels:
   - defaults
 dependencies:
@@ -13,4 +13,3 @@ dependencies:
   - scikit-learn
   - ipywidgets
   - pyyaml
-prefix: C:\Users\jlewe\anaconda3\envs\ESA_37
