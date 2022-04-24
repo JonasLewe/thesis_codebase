@@ -1,0 +1,16 @@
+name: ESA_37
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - console_shortcut
+  - tensorflow-gpu=2.3
+  - tensorflow==2.3=mkl_py37h936c3e2_0
+  - pandas
+  - numpy
+  - seaborn
+  - tqdm
+  - scikit-learn
+  - ipywidgets
+  - pyyaml
+prefix: C:\Users\jlewe\anaconda3\envs\ESA_37

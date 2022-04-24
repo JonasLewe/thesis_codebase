@@ -11,6 +11,7 @@ from argparse import ArgumentParser
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 ROOT_DIR = "../../"
+CONFIG = "Config"
 
 parser = ArgumentParser()
 parser.add_argument("-c", "--config", type=str, default="user_config.yml",
@@ -20,11 +21,11 @@ parser.add_argument("--comment", type=str, default="",
 args = parser.parse_args()
 
 # load custom config data
-with open(os.path.join(ROOT_DIR, args.config), "rb") as f:
+with open(os.path.join(ROOT_DIR, CONFIG, args.config), "rb") as f:
     user_config = yaml.safe_load(f)
 
 # load base config data
-with open(os.path.join(ROOT_DIR, "base_config.yml"), "rb") as f:
+with open(os.path.join(ROOT_DIR, CONFIG, "base_config.yml"), "rb") as f:
     base_config = yaml.safe_load(f)
 
 root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data"])

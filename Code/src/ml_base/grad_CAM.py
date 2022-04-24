@@ -103,7 +103,7 @@ def cam_display(src_img, superimposed_img, img_name, preds, draw_text, cam_img_o
         new_img.save(os.path.join(cam_img_output_path, img_name))
     
 
-def cam_pipeline(BASE_IMG_DIR, img_name, json_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, draw_text=True):
+def cam_pipeline(BASE_IMG_DIR, img_name, segmented_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, draw_text=True):
     img_path = os.path.join(BASE_IMG_DIR, img_name)
     img_array = get_img_array(img_path, size=IMAGE_SIZE, expand_dims=True)
     img = get_pil_img(img_path, IMAGE_SIZE)
@@ -122,7 +122,7 @@ def cam_pipeline(BASE_IMG_DIR, img_name, json_img, IMAGE_SIZE, model, last_conv_
     
     if cam_img_output_path:
         superimposed_img = get_superimposed_gradcam_img(img, heatmap)
-        json_img = json_img.resize(IMAGE_SIZE, Image.ANTIALIAS)
-        cam_display(json_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path)
+        segmented_img = segmented_img.resize(IMAGE_SIZE, Image.ANTIALIAS)
+        cam_display(segmented_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path)
     return heatmap
 
