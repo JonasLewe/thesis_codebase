@@ -7,11 +7,13 @@ global:
 olivine:
     input_data: "Data/Input_Data/processed_img_data/generator_input_data/thin_section_dataset"
     class_1_img_folder: "Data/Input_Data/processed_img_data/Olivine_Images"
+    class_0_img_folder: "Data/Input_Data/processed_img_data/Non_Olivine_Images"
     polygon_label_folder: "Data/Labels/olivine/polygon_label_files"
     voc_label_folder: "Data/Labels/olivine/voc_data/SegmentationClass"
 cats_vs_dogs:
     input_data: "Data/Input_Data/other_datasets/cats_vs_dogs"
     class_1_img_folder: ""
+    class_0_img_folder: ""
     polygon_label_folder: ""
     voc_label_folder: ""
 
@@ -22,4 +24,4 @@ vgg:
     last_conv_layer_name: 'block5_conv3'
 
 # Define xlsx file path
-xlsx_filepath: "training_results.xlsx"
+xlsx_results_filepath: "training_results.xlsx"

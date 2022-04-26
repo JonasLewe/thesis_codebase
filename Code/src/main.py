@@ -30,12 +30,13 @@ with open(os.path.join(ROOT_DIR, CONFIG, "base_config.yml"), "rb") as f:
 
 root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data"])
 class_1_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder"])
+class_0_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder"])
 polygon_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["polygon_label_folder"])
 voc_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["voc_label_folder"])
 last_conv_layer_name = base_config[user_config["model_type"]]["last_conv_layer_name"]
 image_size = (base_config["global"]["img_size"], base_config["global"]["img_size"])
 max_seed_value = base_config["global"]["max_seed_value"]
-xlsx_filename = base_config["xlsx_filepath"]
+xlsx_results_filename = base_config["xlsx_results_filepath"]
 
 epochs = user_config["epochs"]
 batch_size = user_config["batch_size"]
@@ -49,8 +50,11 @@ if not use_gpu:
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
+
 # Only import tensorflow after setting environmant variables!
 import tensorflow as tf
+import wandb
+from wandb.keras import WandbCallback
 from ml_base import evaluation, train, seeds, metrics
 from log_data import logging, xlsx
 
@@ -59,8 +63,16 @@ current_time = now.strftime("%d_%m_%Y-%H_%M_%S")
 PARENT_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "model_tuning", user_config["parent_dir"])
 run_dir_name = f"{user_config['dataset']}_{user_config['model_type']}_{current_time}"
 RUN_DIR = os.path.join(PARENT_DIR, run_dir_name) 
-XLSX_FILE = os.path.join(ROOT_DIR, "Data", "Output_Data", xlsx_filename)
+XLSX_RESULTS_FILE = os.path.join(ROOT_DIR, "Data", "Output_Data", xlsx_results_filename)
 comments = args.comment
+
+wandb.init(project="olivine_classifier", entity="089jonas")
+
+wandb.config = {
+    "learning_rate": learning_rate,
+    "epochs": epochs,
+    "batch_size": batch_size
+}
 
 
 if __name__=="__main__":
@@ -70,7 +82,7 @@ if __name__=="__main__":
     print("\nNum GPUs Available:", len(tf.config.experimental.list_physical_devices("GPU")))
 
     # copy used settings to current folder
-    shutil.copy(os.path.join(ROOT_DIR, args.config), os.path.join(RUN_DIR, "settings.yml"))
+    shutil.copy(os.path.join(ROOT_DIR, CONFIG, args.config), os.path.join(RUN_DIR, "settings.yml"))
     xlsx_summary = []
 
     for seed_value in range(1, max_seed_value+1): 
@@ -91,12 +103,14 @@ if __name__=="__main__":
             
             # set callbacks for training
             callbacks = [
-                tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0)
+                tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0),
+                WandbCallback()
             ]
 
             model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, model_name=user_config["model_type"], epochs=epochs, batch_size=batch_size)
             accuracy, scores = evaluation.evaluate_model(root_image_folder, image_size, model, history, log_dir=SUB_DIR)
             mean_iou_score = metrics.calc_mean_iou_score(class_1_img_folder,
+                                                         class_0_img_folder,
                                                          image_size, 
                                                          model, 
                                                          polygon_label_folder, 
@@ -134,4 +148,4 @@ if __name__=="__main__":
                                     max_iou_fscore,
                                     use_gpu,
                                     comments,
-                                    XLSX_FILE)
+                                    XLSX_RESULTS_FILE)

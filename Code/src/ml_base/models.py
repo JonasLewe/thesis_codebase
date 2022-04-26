@@ -33,7 +33,7 @@ def define_base_model(learning_rate, input_shape=(224, 224, 3), additional_metri
     else:
         metrics = ['accuracy']
     model.compile(optimizer=opt, loss='binary_crossentropy', metrics=metrics)
-    print(model.summary())
+    # print(model.summary())
     return model
 
 
@@ -68,7 +68,7 @@ def define_vgg_model(learning_rate, input_shape=(224, 224, 3), additional_metric
         metrics = ['accuracy']
     model.compile(optimizer=opt, loss='binary_crossentropy', metrics=metrics)
 
-    print(model.summary())
+    # print(model.summary())
     
     return model
 
@@ -88,5 +88,5 @@ def define_vgg_model01(learning_rate, input_shape=(224, 224, 3), additional_metr
     opt = SGD(lr=learning_rate, momentum=0.9)
     base_model.compile(optimizer=opt, loss='binary_crossentropy', metrics=["accuracy"])
 
-    print(base_model.summary())
+    # print(base_model.summary())
     return base_model

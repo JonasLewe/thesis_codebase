@@ -37,7 +37,7 @@ def calc_iou_score(y_true, y_pred):
 #     return mean_iou
 
 
-def calc_mean_iou_score(class_1_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path):
+def calc_mean_iou_score(class_1_img_folder, class_0_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path):
     predicted_binary_added_heatmaps = np.zeros([0])
     ground_truth_added_heatmaps = np.zeros([0])
 
@@ -64,7 +64,8 @@ def calc_mean_iou_score(class_1_img_folder, IMAGE_SIZE, model, polygon_label_fol
 
     # predict heatmaps for non-olivine images
     # TODO
-    # for file in os.listdir(non_olivine_folder):
+    # for file in os.listdir(class_0_img_folder):
+    #   check if file is in val/test set
     #   if 
 
     # calculating the iou value over all images combined 
