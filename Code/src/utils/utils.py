@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from openpyxl import load_workbook
 
 
 def calc_mean(img_tensor_list):
@@ -18,3 +19,22 @@ def get_best_iou_score(subdir):
         else:
             best_iou_score = 0
     return best_iou_score
+
+
+def get_val_test_data(xlsx_file):
+    wb = load_workbook(xlsx_file)
+    ws_test = wb["Test"]
+    ws_val = wb ["Validation"]
+    
+    valset = []
+    testset = []
+
+    for row in ws_val:
+        file_id = "_".join([row[1].value,row[2].value])
+        valset.append(file_id)
+
+    for row in ws_test:
+        file_id = "_".join([row[1].value,row[2].value])
+        testset.append(file_id)
+
+    return valset, testset

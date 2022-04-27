@@ -25,3 +25,4 @@ vgg:
 
 # Define xlsx file path
 xlsx_results_filepath: "training_results.xlsx"
+xlsx_input_split_filepath: "train_val_test_split.xlsx"

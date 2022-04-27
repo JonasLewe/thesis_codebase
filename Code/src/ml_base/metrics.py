@@ -3,6 +3,7 @@ import numpy as np
 from skimage.transform import resize
 from ml_base.grad_CAM import cam_pipeline 
 from utils.img import get_json_img_name, draw_json_polygons
+from utils.utils import get_val_test_data
 import tensorflow as tf
 
 
@@ -37,7 +38,8 @@ def calc_iou_score(y_true, y_pred):
 #     return mean_iou
 
 
-def calc_mean_iou_score(class_1_img_folder, class_0_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path):
+def calc_mean_iou_score(class_1_img_folder, class_0_img_folder, IMAGE_SIZE, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path, xlsx_input_split_file):
+    valset, testset = get_val_test_data(xlsx_input_split_file)
     predicted_binary_added_heatmaps = np.zeros([0])
     ground_truth_added_heatmaps = np.zeros([0])
 
@@ -46,7 +48,7 @@ def calc_mean_iou_score(class_1_img_folder, class_0_img_folder, IMAGE_SIZE, mode
         img_name = get_json_img_name(json_file_name)
         image_id = "_".join(img_name.split('_')[:3])
         segmented_img = draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, IMAGE_SIZE)
-        pred_heatmap = cam_pipeline(class_1_img_folder, img_name, segmented_img, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, draw_text=True)
+        pred_heatmap = cam_pipeline(class_1_img_folder, img_name, IMAGE_SIZE, model, last_conv_layer_name, cam_img_output_path, segmented_img=segmented_img)
         predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
         heatmap_size = predicted_binary_heatmap.shape
         
@@ -62,13 +64,21 @@ def calc_mean_iou_score(class_1_img_folder, class_0_img_folder, IMAGE_SIZE, mode
                 # add all ground truth segmentations to one large 1D vector
                 ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
 
-    # predict heatmaps for non-olivine images
-    # TODO
-    # for file in os.listdir(class_0_img_folder):
-    #   check if file is in val/test set
-    #   if 
+
+    # predict heatmaps for non-olivine images in validation and test set and add to existing heatmaps
+    for file in os.listdir(class_0_img_folder):
+        # check if file is in val/test set
+        for id in [*valset, *testset]:
+            if id in file:
+                pred_heatmap = cam_pipeline(class_0_img_folder, file, IMAGE_SIZE, model, last_conv_layer_name, draw_text=False)
+                predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
+                ground_truth_heatmap = np.zeros(predicted_binary_heatmap.shape)
+                predicted_binary_added_heatmaps = np.concatenate((predicted_binary_added_heatmaps, predicted_binary_heatmap.flatten()), axis=None)
+                ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
+
 
     # calculating the iou value over all images combined 
+    print("Calculating IoU score...")
     mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
     return mean_iou

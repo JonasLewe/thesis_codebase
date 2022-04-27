@@ -37,6 +37,7 @@ last_conv_layer_name = base_config[user_config["model_type"]]["last_conv_layer_n
 image_size = (base_config["global"]["img_size"], base_config["global"]["img_size"])
 max_seed_value = base_config["global"]["max_seed_value"]
 xlsx_results_filename = base_config["xlsx_results_filepath"]
+xlsx_input_split_filename = base_config["xlsx_input_split_filepath"]
 
 epochs = user_config["epochs"]
 batch_size = user_config["batch_size"]
@@ -64,10 +65,13 @@ PARENT_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "model_tuning", user_
 run_dir_name = f"{user_config['dataset']}_{user_config['model_type']}_{current_time}"
 RUN_DIR = os.path.join(PARENT_DIR, run_dir_name) 
 XLSX_RESULTS_FILE = os.path.join(ROOT_DIR, "Data", "Output_Data", xlsx_results_filename)
+XLSX_INPUT_SPLIT_FILE = os.path.join(ROOT_DIR, "Config", "xlsx", xlsx_input_split_filename)
 comments = args.comment
 
+# initialize weights and balances
 wandb.init(project="olivine_classifier", entity="089jonas")
 
+# configure weights and balances callback
 wandb.config = {
     "learning_rate": learning_rate,
     "epochs": epochs,
@@ -117,7 +121,9 @@ if __name__=="__main__":
                                                          voc_label_folder, 
                                                          last_conv_layer_name, 
                                                          iou_threshold,
-                                                         cam_img_output_path=GRAD_CAM_IMGS_DIR)
+                                                         cam_img_output_path=GRAD_CAM_IMGS_DIR,
+                                                         xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE
+                                                         )
             xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
             logging.log_data(model, history, accuracy, mean_iou_score)
             logging.save_best_model(model, mean_iou_score, seed_value, RUN_DIR)
