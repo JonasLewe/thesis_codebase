@@ -6,7 +6,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 # plot diagnostic learning curves
-def summarize_diagnostics(history, log_dir) -> None:
+def summarize_diagnostics_base(history, log_dir) -> None:
     # plot loss
     plt.subplot(211)
     plt.title('Cross Entropy Loss')
@@ -22,6 +22,45 @@ def summarize_diagnostics(history, log_dir) -> None:
     plt.legend(['train', 'val']) 
     
     plt.subplots_adjust(top=1.6, right=1.2)
+    
+    if log_dir:
+        plt.savefig(os.path.join(log_dir, "summarized_diagnostics.png"), bbox_inches='tight')
+    else:
+        plt.show()
+    
+    plt.cla()
+
+
+def summarize_diagnostics_verbose(history, log_dir) -> None:
+    fig = plt.figure(figsize=(20, 10))
+
+    ax = fig.add_subplot(2, 3, 1)
+    ax.plot(history.history["loss"], color="blue")
+    ax.plot(history.history["val_loss"], color="orange")
+    ax.set_title("Cross Entropy Loss")
+
+    ax = fig.add_subplot(2, 3, 2)
+    ax.plot(history.history["accuracy"], color="blue")
+    ax.plot(history.history["val_accuracy"], color="orange")
+    ax.set_title("Classification Accuracy")
+
+    ax = fig.add_subplot(2, 3, 3)
+    ax.plot(history.history["precision"], color="blue")
+    ax.plot(history.history["val_precision"], color="orange")
+    ax.set_title("Classification Precision")
+
+    ax = fig.add_subplot(2, 3, 4)
+    ax.plot(history.history["recall"], color="blue")
+    ax.plot(history.history["val_recall"], color="orange")
+    ax.set_title("Classification Recall")
+
+    ax = fig.add_subplot(2, 3, 5)
+    ax.plot(history.history["auc"], color="blue")
+    ax.plot(history.history["val_auc"], color="orange")
+    ax.set_title("Classification AUC")
+
+
+    fig.tight_layout()
     
     if log_dir:
         plt.savefig(os.path.join(log_dir, "summarized_diagnostics.png"), bbox_inches='tight')
@@ -62,7 +101,7 @@ def show_results(model, test_generator, log_dir) -> None:
     return scores
 
 
-def evaluate_model(img_root_dir, image_size, model, history, log_dir=""):
+def evaluate_model(img_root_dir, image_size, model, history, log_dir="", verbose_metrics=False):
     test_datagen = ImageDataGenerator(rescale=1.0/255.0)
     test_generator = test_datagen.flow_from_directory(os.path.join(img_root_dir, 'test'),
                                                class_mode='binary',
@@ -70,12 +109,15 @@ def evaluate_model(img_root_dir, image_size, model, history, log_dir=""):
                                                target_size=image_size,
                                                batch_size=1,
                                                shuffle=False,)
-    # calculate test set accuracy
-    _, acc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
-    print('\nAccuracy on test set: %.3f' % (acc * 100.0))
-    
-    # plot learning curves
-    summarize_diagnostics(history, log_dir)
+    # Calculate metrics results
+    if verbose_metrics:
+        _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
+        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+        summarize_diagnostics_verbose(history, log_dir)
+    else:
+        _, acc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
+        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+        summarize_diagnostics_base(history, log_dir)
 
     # plot confusion matrix and results
     scores = show_results(model, test_generator, log_dir)

@@ -19,9 +19,9 @@ cats_vs_dogs:
 
 # Define model specific parameters
 base:
-    last_conv_layer_name: 'last_conv_layer'
+    last_conv_layer_name: "last_conv_layer"
 vgg:
-    last_conv_layer_name: 'block5_conv3'
+    last_conv_layer_name: "block5_conv3"
 
 # Define xlsx file path
 xlsx_results_filepath: "training_results.xlsx"

@@ -5,12 +5,12 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 # run the test harness for evaluating a model
-def train_model(img_root_dir, image_size, callbacks=[], additional_metrics=False, model_name='base', epochs=40, batch_size=32, index=22, verbose=1, learning_rate=0.01):
+def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, model_name='base', epochs=40, batch_size=32, index=22, verbose=1, learning_rate=0.01):
     # define model
     if model_name == 'base':
-        model = define_base_model(additional_metrics=additional_metrics, learning_rate=learning_rate)
+        model = define_base_model(verbose_metrics=verbose_metrics, learning_rate=learning_rate)
     elif model_name == 'vgg':
-        model = define_vgg_model01(additional_metrics=additional_metrics, learning_rate=learning_rate)
+        model = define_vgg_model01(verbose_metrics=verbose_metrics, learning_rate=learning_rate)
     
     # create data generators
     train_datagen = ImageDataGenerator(rescale=1.0/255.0,

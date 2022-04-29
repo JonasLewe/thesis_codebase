@@ -9,7 +9,7 @@ from tensorflow.keras.layers import Dropout, Conv2D, MaxPooling2D, Dense, Flatte
 
 
 # define basic cnn model
-def define_base_model(learning_rate, input_shape=(224, 224, 3), additional_metrics=False):
+def define_base_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
     model = Sequential()
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_shape))
     model.add(MaxPooling2D((2, 2)))
@@ -28,7 +28,7 @@ def define_base_model(learning_rate, input_shape=(224, 224, 3), additional_metri
     # compile model
     # opt = SGD(lr=0.001, momentum=0.9)
     opt = Adam(learning_rate)
-    if additional_metrics:
+    if verbose_metrics:
         metrics = METRICS
     else:
         metrics = ['accuracy']
@@ -37,7 +37,7 @@ def define_base_model(learning_rate, input_shape=(224, 224, 3), additional_metri
     return model
 
 
-def define_vgg_model(learning_rate, input_shape=(224, 224, 3), additional_metrics=False):
+def define_vgg_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
     base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
     for layer in base_model.layers:
         # layer.trainable = False
@@ -62,7 +62,7 @@ def define_vgg_model(learning_rate, input_shape=(224, 224, 3), additional_metric
     
     opt = SGD(lr=learning_rate, momentum=0.9)
     # opt = Adam(learning_rate)
-    if additional_metrics:
+    if verbose_metrics:
         metrics = METRICS
     else:
         metrics = ['accuracy']
@@ -72,7 +72,7 @@ def define_vgg_model(learning_rate, input_shape=(224, 224, 3), additional_metric
     
     return model
 
-def define_vgg_model01(learning_rate, input_shape=(224, 224, 3), additional_metrics=False):
+def define_vgg_model01(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
     base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
     for layer in base_model.layers:
         layer.trainable = True

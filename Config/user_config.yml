@@ -1,7 +1,8 @@
 use_gpu: 1
 parent_dir: "debugging"
-dataset: 'olivine'
-model_type: 'base'
+dataset: "olivine"
+model_type: "base"
+verbose_metrics: "True"
 epochs: 40 
 batch_size: 32 
 learning_rate: 0.01

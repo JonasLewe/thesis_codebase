@@ -28,6 +28,7 @@ with open(os.path.join(ROOT_DIR, CONFIG, args.config), "rb") as f:
 with open(os.path.join(ROOT_DIR, CONFIG, "base_config.yml"), "rb") as f:
     base_config = yaml.safe_load(f)
 
+# Read variables from base config
 root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data"])
 class_1_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder"])
 class_0_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder"])
@@ -39,11 +40,13 @@ max_seed_value = base_config["global"]["max_seed_value"]
 xlsx_results_filename = base_config["xlsx_results_filepath"]
 xlsx_input_split_filename = base_config["xlsx_input_split_filepath"]
 
+# Read varlables from user config
 epochs = user_config["epochs"]
 batch_size = user_config["batch_size"]
 learning_rate = user_config["learning_rate"]
 iou_threshold = user_config["iou_threshold"]
 use_gpu = user_config["use_gpu"]
+verbose_metrics = user_config["verbose_metrics"]
 
 
 if not use_gpu:
@@ -111,8 +114,8 @@ if __name__=="__main__":
                 WandbCallback()
             ]
 
-            model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, model_name=user_config["model_type"], epochs=epochs, batch_size=batch_size)
-            accuracy, scores = evaluation.evaluate_model(root_image_folder, image_size, model, history, log_dir=SUB_DIR)
+            model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, verbose_metrics=verbose_metrics, model_name=user_config["model_type"], epochs=epochs, batch_size=batch_size)
+            accuracy, scores = evaluation.evaluate_model(root_image_folder, image_size, model, history, log_dir=SUB_DIR, verbose_metrics=verbose_metrics)
             mean_iou_score = metrics.calc_mean_iou_score(class_1_img_folder,
                                                          class_0_img_folder,
                                                          image_size, 
@@ -125,7 +128,7 @@ if __name__=="__main__":
                                                          xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE
                                                          )
             xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
-            logging.log_data(model, history, accuracy, mean_iou_score)
+            # logging.log_data(model, history, accuracy, mean_iou_score)
             logging.save_best_model(model, mean_iou_score, seed_value, RUN_DIR)
         except BaseException as error:
             print(f"Error: {error}")
