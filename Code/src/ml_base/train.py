@@ -10,17 +10,17 @@ def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, m
     if model_name == 'base':
         model = define_base_model(verbose_metrics=verbose_metrics, learning_rate=learning_rate)
     elif model_name == 'vgg':
-        model = define_vgg_model01(verbose_metrics=verbose_metrics, learning_rate=learning_rate)
+        model = define_vgg_model(verbose_metrics=verbose_metrics, learning_rate=learning_rate)
     
     # create data generators
     train_datagen = ImageDataGenerator(rescale=1.0/255.0,
-                                       #rotation_range=40,
+                                       rotation_range=40,
                                        #width_shift_range=0.2,
                                        #height_shift_range=0.2,
                                        #shear_range=0.2,
                                        #zoom_range=0.2,
                                        #brightness_range=[0.1,1],
-                                       #horizontal_flip=True,
+                                       horizontal_flip=True,
                                        #fill_mode='nearest'
                                       )
     

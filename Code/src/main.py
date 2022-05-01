@@ -71,10 +71,10 @@ XLSX_RESULTS_FILE = os.path.join(ROOT_DIR, "Data", "Output_Data", xlsx_results_f
 XLSX_INPUT_SPLIT_FILE = os.path.join(ROOT_DIR, "Config", "xlsx", xlsx_input_split_filename)
 comments = args.comment
 
-# initialize weights and balances
-wandb.init(project="olivine_classifier", entity="089jonas")
+# initialize weights and biases
+wandb.init(project="olivine_classifier", entity="089jonas", group="evaluating_seeds")
 
-# configure weights and balances callback
+# configure weights and biases callback
 wandb.config = {
     "learning_rate": learning_rate,
     "epochs": epochs,

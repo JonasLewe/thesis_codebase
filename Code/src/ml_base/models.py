@@ -1,3 +1,5 @@
+import os
+import tempfile
 from email.mime import base
 from ml_base.metrics import METRICS
 import tensorflow as tf
@@ -6,6 +8,32 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.layers.experimental.preprocessing import Rescaling
 from tensorflow.keras.layers import Dropout, Conv2D, MaxPooling2D, Dense, Flatten
+
+
+def add_regularization(model, regularizer=tf.keras.regularizers.l2(l2=0.0001)):
+    if not isinstance(regularizer, tf.keras.regularizers.Regularizer):
+        print("Regularizer must be a subclass of tf.keras.regularizers.Regularizer")
+        return model
+
+    for layer in model.layers:
+        for attr in ['kernel_regularizer']:
+            if hasattr(layer, attr):
+                setattr(layer, attr, regularizer)
+
+    # When we change the layers attributes, the change only happens in the model config file
+    model_json = model.to_json() 
+    
+    # Save the weights before reloading the model.
+    tmp_weights_path = os.path.join(tempfile.gettempdir(), 'tmp_weights.h5')
+    model.save_weights(tmp_weights_path)
+
+    # Load model from config
+    model = tf.keras.models.model_from_json(model_json)
+
+    # Reload the model weights
+    model.load_weights(tmp_weights_path, by_name=True)
+
+    return model
 
 
 # define basic cnn model
@@ -61,6 +89,10 @@ def define_vgg_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=F
     model.add(Dense(1,activation=('sigmoid'),name="activation_1"))
     
     opt = SGD(lr=learning_rate, momentum=0.9)
+
+    # add regularization to current model
+    model = add_regularization(model)
+
     # opt = Adam(learning_rate)
     if verbose_metrics:
         metrics = METRICS
