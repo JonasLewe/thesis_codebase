@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+from utils.img import hist_eq
 from ml_base.models import define_base_model, define_vgg_model, define_vgg_model01
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
@@ -13,18 +14,19 @@ def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, m
         model = define_vgg_model(verbose_metrics=verbose_metrics, learning_rate=learning_rate)
     
     # create data generators
-    train_datagen = ImageDataGenerator(rescale=1.0/255.0,
+    train_datagen = ImageDataGenerator(# preprocessing_function=hist_eq,
+                                       rescale=1.0/255.0,
                                        rotation_range=40,
-                                       #width_shift_range=0.2,
-                                       #height_shift_range=0.2,
-                                       #shear_range=0.2,
-                                       #zoom_range=0.2,
-                                       #brightness_range=[0.1,1],
+                                       # width_shift_range=0.2,
+                                       # height_shift_range=0.2,
+                                       # shear_range=0.2,
+                                       # zoom_range=0.2,
+                                       # brightness_range=[0.1,1],
                                        horizontal_flip=True,
-                                       #fill_mode='nearest'
+                                       # fill_mode='nearest'
                                       )
     
-    val_datagen = ImageDataGenerator(rescale=1.0/255.0)
+    val_datagen = ImageDataGenerator(rescale=1.0/255.0) # use rescale to normalize pixel values in input data
     
     # prepare iterators
     train_generator = train_datagen.flow_from_directory(os.path.join(img_root_dir, 'train'),

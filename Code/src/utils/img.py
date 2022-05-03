@@ -5,6 +5,19 @@ import PIL
 import json
 from matplotlib import pyplot as plt
 from tensorflow.keras.preprocessing import image
+from skimage import exposure
+
+
+def hist_eq(img, clip_limit=0.03):
+    # img = exposure.equalize_adapthist(img)
+    R,G,B = img[:, :, 0], img[:, :, 1], img[:, :, 2] # For RGB image 
+    R_eq = exposure.equalize_hist(R)
+    G_eq = exposure.equalize_hist(G)
+    B_eq = exposure.equalize_hist(B)
+    
+    img_eq = cv2.merge((R_eq, G_eq, B_eq))
+    #img *= 255.0/img.max()
+    return img_eq
 
 
 def show(img):

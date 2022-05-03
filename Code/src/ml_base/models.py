@@ -3,7 +3,7 @@ import tempfile
 from email.mime import base
 from ml_base.metrics import METRICS
 import tensorflow as tf
-from tensorflow.keras.optimizers import SGD, Adam
+from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.layers.experimental.preprocessing import Rescaling
@@ -56,6 +56,10 @@ def define_base_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=
     # compile model
     # opt = SGD(lr=0.001, momentum=0.9)
     opt = Adam(learning_rate)
+
+    # add regularization to current model
+    model = add_regularization(model)
+
     if verbose_metrics:
         metrics = METRICS
     else:
@@ -67,10 +71,9 @@ def define_base_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=
 
 def define_vgg_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
     base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
-    for layer in base_model.layers:
-        # layer.trainable = False
-        layer.trainable = True # (train all layers from scratch)
-    # base_model.trainable = False # freeze layers from pretrained model
+    for layer in base_model.layers[:11]:
+        layer.trainable = False
+        # layer.trainable = True # (train all layers from scratch)
 
     model = Sequential()
     #model = Model(inputs=base_model.input, outputs=base_model.layers[-1].output) # copy all layers from base_model
@@ -88,7 +91,9 @@ def define_vgg_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=F
     # Final layer
     model.add(Dense(1,activation=('sigmoid'),name="activation_1"))
     
-    opt = SGD(lr=learning_rate, momentum=0.9)
+    # opt = Adam(learning_rate)
+    opt = RMSprop(learning_rate)
+    # opt = SGD(lr=learning_rate, momentum=0.9)
 
     # add regularization to current model
     model = add_regularization(model)

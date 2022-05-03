@@ -1,9 +1,9 @@
 use_gpu: 1
 parent_dir: "debugging"
 dataset: "olivine"
-model_type: "vgg"
+model_type: "base"
 verbose_metrics: "True"
 epochs: 40 
 batch_size: 32 
-learning_rate: 0.001
+learning_rate: 0.01
 iou_threshold: 0.01
