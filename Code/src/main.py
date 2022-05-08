@@ -30,6 +30,7 @@ with open(os.path.join(ROOT_DIR, CONFIG, "base_config.yml"), "rb") as f:
 
 # Read variables from base config
 root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data"])
+# root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data_small"])
 class_1_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder"])
 class_0_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder"])
 polygon_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["polygon_label_folder"])
@@ -116,20 +117,21 @@ if __name__=="__main__":
 
             model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, verbose_metrics=verbose_metrics, model_name=user_config["model_type"], epochs=epochs, batch_size=batch_size)
             accuracy, scores = evaluation.evaluate_model(root_image_folder, image_size, model, history, log_dir=SUB_DIR, verbose_metrics=verbose_metrics)
-            mean_iou_score = metrics.calc_mean_iou_score(class_1_img_folder,
-                                                         class_0_img_folder,
-                                                         image_size, 
-                                                         model, 
-                                                         polygon_label_folder, 
-                                                         voc_label_folder, 
-                                                         last_conv_layer_name, 
-                                                         iou_threshold,
-                                                         cam_img_output_path=GRAD_CAM_IMGS_DIR,
-                                                         xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE
-                                                         )
-            xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
-            # logging.log_data(model, history, accuracy, mean_iou_score)
-            logging.save_best_model(model, mean_iou_score, seed_value, RUN_DIR)
+            if (class_1_img_folder is not ""):
+                mean_iou_score = metrics.calc_mean_iou_score(class_1_img_folder,
+                                                             class_0_img_folder,
+                                                             image_size, 
+                                                             model, 
+                                                             polygon_label_folder, 
+                                                             voc_label_folder, 
+                                                             last_conv_layer_name, 
+                                                             iou_threshold,
+                                                             cam_img_output_path=GRAD_CAM_IMGS_DIR,
+                                                             xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE
+                                                             )
+                xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
+                # logging.log_data(model, history, accuracy, mean_iou_score)
+                logging.save_best_model(model, mean_iou_score, seed_value, RUN_DIR)
         except BaseException as error:
             print(f"Error: {error}")
             # remove all folders for current run

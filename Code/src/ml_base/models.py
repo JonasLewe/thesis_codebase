@@ -58,7 +58,7 @@ def define_base_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=
     opt = Adam(learning_rate)
 
     # add regularization to current model
-    model = add_regularization(model)
+    # model = add_regularization(model)
 
     if verbose_metrics:
         metrics = METRICS

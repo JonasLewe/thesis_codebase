@@ -6,6 +6,7 @@ global:
 # Define dataset specific parameters
 olivine:
     input_data: "Data/Input_Data/processed_img_data/generator_input_data/thin_section_dataset"
+    input_data_small: "Data/Input_Data/processed_img_data/generator_input_data/small_dataset" 
     class_1_img_folder: "Data/Input_Data/processed_img_data/Olivine_Images"
     class_0_img_folder: "Data/Input_Data/processed_img_data/Non_Olivine_Images"
     polygon_label_folder: "Data/Labels/olivine/polygon_label_files"
