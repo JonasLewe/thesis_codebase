@@ -63,6 +63,7 @@ from wandb.keras import WandbCallback
 from ml_base import evaluation, train, seeds, metrics
 from log_data import logging, xlsx
 
+WAND_API_KEY = user_config["wand_api_key"]
 now = datetime.now()
 current_time = now.strftime("%d_%m_%Y-%H_%M_%S")
 PARENT_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "model_tuning", user_config["parent_dir"])

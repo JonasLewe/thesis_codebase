@@ -1,7 +1,7 @@
 import os
 from collections import Counter
 from utils.img import hist_eq
-from ml_base.models import define_base_model, define_vgg_model, define_vgg_model01
+from ml_base.models import define_base_model, define_vgg_model, define_vgg_model_simple
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
