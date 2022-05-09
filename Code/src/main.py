@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 # from cv2 import threshold
 import yaml
@@ -12,6 +13,10 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 ROOT_DIR = "../../"
 CONFIG = "Config"
+
+
+f = open("thesis_log.out", "w")
+sys.stdout = f
 
 parser = ArgumentParser()
 parser.add_argument("-c", "--config", type=str, default="user_config.yml",
@@ -161,6 +166,7 @@ if __name__=="__main__":
                                                 XLSX_RESULTS_FILE)
         except BaseException as error:
             print(f"Error: {error}")
+            f.close()
             # remove all folders for current run
             shutil.rmtree(RUN_DIR)
-    
+f.close()   
