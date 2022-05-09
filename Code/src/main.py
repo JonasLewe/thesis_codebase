@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 
 # disable cuda debug info
 # os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
 root_dir = "../../"
 ROOT_DIR = os.path.join(os.path.dirname(__file__), root_dir)
