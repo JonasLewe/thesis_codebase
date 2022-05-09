@@ -11,12 +11,11 @@ from argparse import ArgumentParser
 # disable cuda debug info
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-ROOT_DIR = "../../"
+root_dir = "../../"
+ROOT_DIR = os.path.join(os.path.dirname(__file__), root_dir)
+# ROOT_DIR = os.path.dirname(__file__)
 CONFIG = "Config"
 
-
-f = open("thesis_log.out", "w")
-sys.stdout = f
 
 parser = ArgumentParser()
 parser.add_argument("-c", "--config", type=str, default="user_config.yml",
@@ -68,7 +67,6 @@ from wandb.keras import WandbCallback
 from ml_base import evaluation, train, seeds, metrics
 from log_data import logging, xlsx
 
-WAND_API_KEY = user_config["wand_api_key"]
 now = datetime.now()
 current_time = now.strftime("%d_%m_%Y-%H_%M_%S")
 PARENT_DIR = os.path.join(ROOT_DIR, "Data", "Output_Data", "model_tuning", user_config["parent_dir"])
@@ -166,7 +164,5 @@ if __name__=="__main__":
                                                 XLSX_RESULTS_FILE)
         except BaseException as error:
             print(f"Error: {error}")
-            f.close()
             # remove all folders for current run
             shutil.rmtree(RUN_DIR)
-f.close()   

@@ -3,4 +3,5 @@
 __pycache__/
 Data/
 Code/src/wandb
+wandb/
 wandb_api_key.txt
