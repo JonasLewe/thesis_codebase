@@ -1,9 +1,10 @@
 use_gpu: 1
 parent_dir: "debugging"
-dataset: "cats_vs_dogs"
-model_type: "vgg"
+dataset: "olivine"
+model_type: "base"
 verbose_metrics: 0
 epochs: 40 
 batch_size: 32 
 learning_rate: 0.01
 iou_threshold: 0.01
+wand_api_key: "0faedda74fb94f1193e4db4bef4c31027efc978f"
