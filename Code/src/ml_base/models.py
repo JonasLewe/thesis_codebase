@@ -71,7 +71,8 @@ def define_base_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=
 
 def define_vgg_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
     base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
-    for layer in base_model.layers[:11]:
+    # for layer in base_model.layers[:11]:
+    for layer in base_model.layers:
         layer.trainable = False
         # layer.trainable = True # (train all layers from scratch)
 
@@ -109,7 +110,7 @@ def define_vgg_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=F
     
     return model
 
-def define_vgg_model01(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
+def define_vgg_model_simple(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
     base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
     for layer in base_model.layers:
         layer.trainable = True

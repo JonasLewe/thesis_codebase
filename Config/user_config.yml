@@ -1,8 +1,8 @@
 use_gpu: 1
 parent_dir: "debugging"
-dataset: "olivine"
-model_type: "base"
-verbose_metrics: "True"
+dataset: "cats_vs_dogs"
+model_type: "vgg"
+verbose_metrics: 0
 epochs: 40 
 batch_size: 32 
 learning_rate: 0.01
