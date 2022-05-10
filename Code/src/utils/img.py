@@ -25,9 +25,9 @@ def show(img):
     plt.show()
 
 
-def get_img_array(img_path, size=(224,224), expand_dims=False, normalize=False):
+def get_img_array(img_path, image_size=(224,224), expand_dims=False, normalize=False):
     # 'img' is a PIL image of size 224x224
-    img = image.load_img(img_path, target_size=size)
+    img = image.load_img(img_path, target_size=image_size)
 
     # 'array' is a float32 Numpy array of shape (224, 224, 3)
     array = image.img_to_array(img)
@@ -84,12 +84,12 @@ def draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_lab
     return img
 
 
-def get_img_and_draw(ROOT_DIR, img_name, IMAGE_SIZE):
+def get_img_and_draw(ROOT_DIR, img_name, image_size):
     img_path = os.path.join(ROOT_DIR, img_name)
     # print(img_path)
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # img = cv2.resize(img, IMAGE_SIZE)
+    # img = cv2.resize(img, image_size)
     img = PIL.Image.fromarray(img)
     draw = PIL.ImageDraw.Draw(img)
     return img, draw

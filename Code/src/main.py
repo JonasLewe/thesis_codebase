@@ -37,6 +37,8 @@ with open(os.path.join(ROOT_DIR, CONFIG, "base_config.yml"), "rb") as f:
 # Read variables from base config
 root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data"])
 # root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data_small"])
+# root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data_undersampled"])
+
 class_1_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder"])
 class_0_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder"])
 polygon_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["polygon_label_folder"])
@@ -80,14 +82,14 @@ XLSX_INPUT_SPLIT_FILE = os.path.join(ROOT_DIR, "Config", "xlsx", xlsx_input_spli
 comments = args.comment
 
 # initialize weights and biases
-wandb.init(project="olivine_classifier", entity="089jonas", group="evaluating_seeds")
-
-# configure weights and biases callback
-wandb.config = {
-    "learning_rate": learning_rate,
-    "epochs": epochs,
-    "batch_size": batch_size
-}
+# wandb.init(project="olivine_classifier", entity="089jonas", group="evaluating_seeds")
+# 
+# # configure weights and biases callback
+# wandb.config = {
+#     "learning_rate": learning_rate,
+#     "epochs": epochs,
+#     "batch_size": batch_size
+# }
 
 
 if __name__=="__main__":
@@ -119,7 +121,7 @@ if __name__=="__main__":
             # set callbacks for training
             callbacks = [
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0),
-                WandbCallback()
+                # WandbCallback()
             ]
 
             model, history = train.train_model(root_image_folder, image_size, callbacks=callbacks, verbose_metrics=verbose_metrics, model_name=user_config["model_type"], epochs=epochs, batch_size=batch_size)

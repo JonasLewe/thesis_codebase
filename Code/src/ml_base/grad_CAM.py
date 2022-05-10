@@ -103,16 +103,18 @@ def cam_display(src_img, superimposed_img, img_name, preds, draw_text, cam_img_o
         new_img.save(os.path.join(cam_img_output_path, img_name))
     
 
-def cam_pipeline(BASE_IMG_DIR, img_name, IMAGE_SIZE, model, last_conv_layer_name, draw_text=True ,cam_img_output_path="", segmented_img=None):
+def cam_pipeline(BASE_IMG_DIR, img_name, image_size, model, last_conv_layer_name, draw_text=True ,cam_img_output_path="", segmented_img=None):
+    # set fixed image size for cam calculation
+    image_size = (224,224)
     img_path = os.path.join(BASE_IMG_DIR, img_name)
-    img_array = get_img_array(img_path, size=IMAGE_SIZE, expand_dims=True)
-    img = get_pil_img(img_path, IMAGE_SIZE)
+    img_array = get_img_array(img_path, image_size=image_size, expand_dims=True)
+    img = get_pil_img(img_path, image_size)
 
     # Remove last layer's softmax
     model.layers[-1].activation = None
 
     # check prediction
-    new_image = get_img_array(img_path, expand_dims=True, normalize=True)
+    new_image = get_img_array(img_path, image_size=image_size, expand_dims=True, normalize=True)
     preds = model.predict(new_image)
     #print(f"Predictions from grad_CAM.py:cam_pipeline: {preds}")
     #print("Predicted:", decode_predictions(preds, top=1)[0])
@@ -122,7 +124,7 @@ def cam_pipeline(BASE_IMG_DIR, img_name, IMAGE_SIZE, model, last_conv_layer_name
     
     if cam_img_output_path:
         superimposed_img = get_superimposed_gradcam_img(img, heatmap)
-        segmented_img = segmented_img.resize(IMAGE_SIZE, Image.ANTIALIAS)
+        segmented_img = segmented_img.resize(image_size, Image.ANTIALIAS)
         cam_display(segmented_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path)
     return heatmap
 
