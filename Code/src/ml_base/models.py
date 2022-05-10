@@ -37,7 +37,8 @@ def add_regularization(model, regularizer=tf.keras.regularizers.l2(l2=0.0001)):
 
 
 # define basic cnn model
-def define_base_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
+def define_base_model(learning_rate, image_size=(224, 224), verbose_metrics=False):
+    input_shape=(image_size[0], image_size[1], 3)
     model = Sequential()
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_shape))
     model.add(MaxPooling2D((2, 2)))
@@ -69,7 +70,8 @@ def define_base_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=
     return model
 
 
-def define_vgg_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
+def define_vgg_model(learning_rate, image_size=(224, 224), verbose_metrics=False):
+    input_shape=(image_size[0], image_size[1], 3)
     base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
     # for layer in base_model.layers[:11]:
     for layer in base_model.layers:
@@ -110,7 +112,8 @@ def define_vgg_model(learning_rate, input_shape=(224, 224, 3), verbose_metrics=F
     
     return model
 
-def define_vgg_model_simple(learning_rate, input_shape=(224, 224, 3), verbose_metrics=False):
+def define_vgg_model_simple(learning_rate, image_size=(224, 224), verbose_metrics=False):
+    input_shape=(image_size[0], image_size[1], 3)
     base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
     for layer in base_model.layers:
         layer.trainable = True

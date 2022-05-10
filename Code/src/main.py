@@ -9,7 +9,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 
 # disable cuda debug info
-# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
 root_dir = "../../"
@@ -33,6 +33,7 @@ with open(os.path.join(ROOT_DIR, CONFIG, args.config), "rb") as f:
 with open(os.path.join(ROOT_DIR, CONFIG, "base_config.yml"), "rb") as f:
     base_config = yaml.safe_load(f)
 
+
 # Read variables from base config
 root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data"])
 # root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data_small"])
@@ -53,6 +54,7 @@ learning_rate = user_config["learning_rate"]
 iou_threshold = user_config["iou_threshold"]
 use_gpu = user_config["use_gpu"]
 verbose_metrics = user_config["verbose_metrics"]
+
 
 
 if not use_gpu:

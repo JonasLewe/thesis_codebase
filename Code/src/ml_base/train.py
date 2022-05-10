@@ -9,20 +9,20 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, model_name='base', epochs=40, batch_size=32, index=22, verbose=1, learning_rate=0.01):
     # define model
     if model_name == 'base':
-        model = define_base_model(verbose_metrics=verbose_metrics, learning_rate=learning_rate)
+        model = define_base_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
     elif model_name == 'vgg':
-        model = define_vgg_model(verbose_metrics=verbose_metrics, learning_rate=learning_rate)
+        model = define_vgg_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
     
     # create data generators
     train_datagen = ImageDataGenerator(# preprocessing_function=hist_eq,
                                        rescale=1.0/255.0,
-                                       rotation_range=40,
+                                       # rotation_range=40,
                                        # width_shift_range=0.2,
                                        # height_shift_range=0.2,
                                        # shear_range=0.2,
                                        # zoom_range=0.2,
                                        # brightness_range=[0.1,1],
-                                       horizontal_flip=True,
+                                       # horizontal_flip=True,
                                        # fill_mode='nearest'
                                       )
     
@@ -33,13 +33,15 @@ def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, m
                                                  class_mode='binary',
                                                  color_mode='rgb',
                                                  batch_size=batch_size,
-                                                 target_size=image_size)
+                                                 target_size=image_size,
+                                                 shuffle=True)
     
     val_generator = val_datagen.flow_from_directory(os.path.join(img_root_dir, 'validation'),
                                                class_mode='binary', 
                                                color_mode='rgb',
                                                batch_size=batch_size, 
-                                               target_size=image_size)
+                                               target_size=image_size,
+                                               shuffle=True)
     
     # calculate class weights
     counter = Counter(train_generator.classes)
