@@ -12,6 +12,9 @@ def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, m
         model = define_base_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
     elif model_name == 'vgg':
         model = define_vgg_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
+    elif model_name == 'vgg_simple':
+        model = define_vgg_model_simple(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
+
     
     # create data generators
     train_datagen = ImageDataGenerator(# preprocessing_function=hist_eq,
