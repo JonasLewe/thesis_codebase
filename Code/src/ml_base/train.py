@@ -1,7 +1,7 @@
 import os
 from collections import Counter
 from utils.img import hist_eq
-from ml_base.models import define_base_model, define_vgg_model, define_vgg_model_simple
+from ml_base.models import define_base_model, define_vgg_model, define_vgg_model_simple, create_dummy_model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
@@ -11,9 +11,8 @@ def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, m
     if model_name == 'base':
         model = define_base_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
     elif model_name == 'vgg':
-        model = define_vgg_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
-    elif model_name == 'vgg_simple':
-        model = define_vgg_model_simple(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
+        # model = define_vgg_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
+        model = create_dummy_model()
 
     
     # create data generators

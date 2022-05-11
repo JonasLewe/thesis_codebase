@@ -4,7 +4,7 @@ from email.mime import base
 from ml_base.metrics import METRICS
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.layers.experimental.preprocessing import Rescaling
 from tensorflow.keras.layers import Dropout, Conv2D, MaxPooling2D, Dense, Flatten
@@ -131,3 +131,50 @@ def define_vgg_model_simple(learning_rate, image_size=(224, 224), verbose_metric
 
     # print(base_model.summary())
     return base_model
+
+
+def create_dummy_model(input_shape=(224,224,3), n_classes=1, optimizer='rmsprop', fine_tune=0):
+    """
+    Compiles a model integrated with VGG16 pretrained layers
+    
+    input_shape: tuple - the shape of input images (width, height, channels)
+    n_classes: int - number of classes for the output layer
+    optimizer: string - instantiated optimizer to use for training. Defaults to 'RMSProp'
+    fine_tune: int - The number of pre-trained layers to unfreeze.
+                If set to 0, all pretrained layers will freeze during training
+    """
+    
+    # Pretrained convolutional layers are loaded using the Imagenet weights.
+    # Include_top is set to False, in order to exclude the model's fully-connected layers.
+    conv_base = VGG16(include_top=False,
+                     weights='imagenet', 
+                     input_shape=input_shape)
+    
+    # Defines how many layers to freeze during training.
+    # Layers in the convolutional base are switched from trainable to non-trainable
+    # depending on the size of the fine-tuning parameter.
+    if fine_tune > 0:
+        for layer in conv_base.layers[:-fine_tune]:
+            layer.trainable = False
+    else:
+        for layer in conv_base.layers:
+            layer.trainable = True
+
+    # Create a new 'top' of the model (i.e. fully-connected layers).
+    # This is 'bootstrapping' a new top_model onto the pretrained layers.
+    top_model = conv_base.output
+    top_model = Flatten(name="flatten")(top_model)
+    top_model = Dense(4096, activation='relu')(top_model)
+    top_model = Dense(1072, activation='relu')(top_model)
+    top_model = Dropout(0.2)(top_model)
+    output_layer = Dense(n_classes, activation='sigmoid')(top_model)
+    
+    # Group the convolutional base and new fully-connected layers into a Model object.
+    model = Model(inputs=conv_base.input, outputs=output_layer)
+
+    # Compiles the model for training.
+    model.compile(optimizer=optimizer, 
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+    
+    return model
