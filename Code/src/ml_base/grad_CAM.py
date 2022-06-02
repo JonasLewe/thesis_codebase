@@ -2,6 +2,9 @@ import os
 import numpy as np
 import matplotlib.cm as cm
 import tensorflow as tf
+from tensorflow.keras import Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense
 from utils.img import show, get_img_array, get_pil_img 
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from tensorflow.keras.preprocessing.image import array_to_img, img_to_array
@@ -10,9 +13,18 @@ from tensorflow.keras.preprocessing.image import array_to_img, img_to_array
 def generate_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
     # First, we create a model that maps the input image to the activations
     # of the last conv layer as well as the output predictions
-    grad_model = tf.keras.models.Model(
-        [model.inputs], [model.get_layer(last_conv_layer_name).output, model.output]
-    )
+    grad_model = Model([model.inputs], [model.get_layer(last_conv_layer_name).output, model.output])
+
+    # try to create single input evaluation model for trained multi input model
+    # single_image_input = Input(shape=(224,224,3))
+    # x = model.layers[1](single_image_input)
+    # for new_layer in model.layers[2:-1]:
+    #     x = new_layer(x)
+    # output_layer = Dense(1, activation="sigmoid")(x)
+    # temp_model = Model(inputs=single_image_input, outputs=output_layer)
+    # grad_model = Model([temp_model.inputs], [temp_model.get_layer(last_conv_layer_name).output, temp_model.output])
+
+    # print(f"Grad-CAM Model Summary: {grad_model.summary()}")
 
     # Then, we compute the gradient of the top predicted class for our input image
     # with respect to the activations of the last conv layer
@@ -79,7 +91,7 @@ def get_superimposed_gradcam_img(img, heatmap, cam_path="cam.jpg", alpha=0.8, sa
 
 
 def cam_display(src_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path):
-    text = f'IMG_NAME: {img_name}\nPrediction: {preds[0][0]}'
+    text = f'IMG_NAME: {img_name}\nPrediction: {round(preds[0][0], 4)}'
     images = [src_img, superimposed_img]
     
     widths, heights = zip(*(i.size for i in images))
@@ -111,13 +123,16 @@ def cam_pipeline(BASE_IMG_DIR, img_name, image_size, model, last_conv_layer_name
     img = get_pil_img(img_path, image_size)
 
     # Remove last layer's softmax
-    model.layers[-1].activation = None
+    # model.layers[-1].activation = None
 
     # check prediction
     new_image = get_img_array(img_path, image_size=image_size, expand_dims=True, normalize=True)
     preds = model.predict(new_image)
     #print(f"Predictions from grad_CAM.py:cam_pipeline: {preds}")
     #print("Predicted:", decode_predictions(preds, top=1)[0])
+
+    # Remove last layer's softmax
+    model.layers[-1].activation = None
     
     # Generate class activation heatmap
     heatmap = generate_gradcam_heatmap(img_array, model, last_conv_layer_name)

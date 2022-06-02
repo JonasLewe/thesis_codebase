@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from utils.joined_generator import JoinedGenerator
 from matplotlib import pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report, precision_recall_fscore_support 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -101,26 +102,67 @@ def show_results(model, test_generator, log_dir) -> None:
     return scores
 
 
-def evaluate_model(img_root_dir, image_size, model, history, log_dir="", verbose_metrics=False):
-    test_datagen = ImageDataGenerator(rescale=1.0/255.0)
-    test_generator = test_datagen.flow_from_directory(os.path.join(img_root_dir, 'test'),
-                                               class_mode='binary',
-                                               color_mode='rgb',
-                                               target_size=image_size,
-                                               batch_size=1,
-                                               shuffle=False,)
-    # Calculate metrics results
-    if verbose_metrics:
-        _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
-        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
-        summarize_diagnostics_verbose(history, log_dir)
-    else:
-        _, acc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
-        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
-        summarize_diagnostics_base(history, log_dir)
+def evaluate_model(img_root_dir, image_size, model, history, log_dir="", verbose_metrics=False, early_fusion=False, late_fusion=False):
+    if early_fusion:
+        ppl_root_dir = f"{img_root_dir}_ppl"
+        xpl_root_dir = img_root_dir
+        
+        ppl_test_datagen = ImageDataGenerator(rescale=1.0/255.0)
+        xpl_test_datagen = ImageDataGenerator(rescale=1.0/255.0)
 
-    # plot confusion matrix and results
-    scores = show_results(model, test_generator, log_dir)
+        ppl_test_generator = ppl_test_datagen.flow_from_directory(os.path.join(ppl_root_dir, 'test'),
+                                                   class_mode='binary',
+                                                   color_mode='rgb',
+                                                   target_size=image_size,
+                                                   batch_size=1,
+                                                   shuffle=False,)
+        
+        xpl_test_generator = xpl_test_datagen.flow_from_directory(os.path.join(xpl_root_dir, 'test'),
+                                                   class_mode='binary',
+                                                   color_mode='rgb',
+                                                   target_size=image_size,
+                                                   batch_size=1,
+                                                   shuffle=False,)
+
+        test_generator = JoinedGenerator(ppl_test_generator, xpl_test_generator)
+
+        # Calculate metrics results
+        if verbose_metrics:
+            _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(ppl_test_generator), verbose=1)
+            print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+            summarize_diagnostics_verbose(history, log_dir)
+        else:
+            _, acc = model.evaluate(test_generator, steps=len(ppl_test_generator), verbose=1)
+            print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+            summarize_diagnostics_base(history, log_dir)
+
+        # plot confusion matrix and results
+        scores = show_results(model, test_generator, log_dir)
+    
+    elif late_fusion:
+        pass
+
+    else:
+        test_datagen = ImageDataGenerator(rescale=1.0/255.0)
+        test_generator = test_datagen.flow_from_directory(os.path.join(img_root_dir, 'test'),
+                                                   class_mode='binary',
+                                                   color_mode='rgb',
+                                                   target_size=image_size,
+                                                   batch_size=1,
+                                                   shuffle=False,)
+
+        # Calculate metrics results
+        if verbose_metrics:
+            _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
+            print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+            summarize_diagnostics_verbose(history, log_dir)
+        else:
+            _, acc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
+            print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+            summarize_diagnostics_base(history, log_dir)
+
+        # plot confusion matrix and results
+        scores = show_results(model, test_generator, log_dir)
     
     return acc, scores
 
