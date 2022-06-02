@@ -96,7 +96,7 @@ for gpu in gpus:
 
 import wandb
 from wandb.keras import WandbCallback
-from ml_base import evaluation, train, seeds, metrics
+from ml_base import evaluation, train, seeds, metrics, utils
 from log_data import logging, xlsx
 
 now = datetime.now()
@@ -226,7 +226,4 @@ if __name__=="__main__":
         
         stop = timer()
         elapsed_time = stop - start
-        print(53*"#")
-        print(f"Run #{seed_value} time: {round(elapsed_time, 2)} seconds.")
-        print(f"Approximate remaining time: {round((max_seed_value - seed_value) * elapsed_time, 2)} seconds.")
-        print(53*"#")
+        utils.utils.display_wall_clock_time(elapsed_time, max_seed_value, seed_value) 

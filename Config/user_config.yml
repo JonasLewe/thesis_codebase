@@ -6,7 +6,7 @@ early_fusion: 0
 late_fusion: 0
 verbose_metrics: 1
 epochs: 50 
-batch_size: 32 
+batch_size: 16 
 learning_rate: 0.01
 iou_threshold: 0.01
 wand_api_key: "0faedda74fb94f1193e4db4bef4c31027efc978f"

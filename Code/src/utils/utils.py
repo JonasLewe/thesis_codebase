@@ -38,3 +38,15 @@ def get_val_test_data(xlsx_file):
         testset.append(file_id)
 
     return valset, testset
+
+
+def display_wall_clock_time(elapsed_time, max_iterations, current_iteration):
+    unit = "seconds"
+    print(53*"#")
+    print(f"Run #{current_iteration} time: {round(elapsed_time, 2)} {unit}.")
+    remaining_time = round((max_iterations - current_iteration) * elapsed_time, 2)
+    if remaining_time > 60:
+        remaining_time = round(remaining_time / 60, 2)
+        unit = "minutes"
+    print(f"Approximate remaining time: {remaining_time} {unit}.")
+    print(53*"#")

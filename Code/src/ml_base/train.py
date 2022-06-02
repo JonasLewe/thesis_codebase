@@ -136,10 +136,11 @@ def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, m
 
     max_val = float(max(counter.values()))
     class_weights = {class_id : max_val/num_images for class_id, num_images in counter.items()}
+    class_weights_printable = {k: round(v, 2) for k, v in class_weights.items()}
     
     ### Debug info ###
     print(f"\nClasses: {class_indices}")
-    print(f"Class Weights: {class_weights}")
+    print(f"Class Weights: {class_weights_printable}")
     print(f"Class Distribution: {dict(counter)}\n")
     # fit model
     history = model.fit(train_generator, 
