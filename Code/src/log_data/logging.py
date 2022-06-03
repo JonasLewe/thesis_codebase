@@ -7,15 +7,17 @@ def log_data(model, history, metrics, mean_iou_score):
     pass
 
 
-def save_best_model(model, iou_scores, seed_value, PARENT_DIR):
-    mean_iou_score = iou_scores[0]
-    olivine_iou_score = iou_scores[1]
+def save_best_model(model, segmentation_scores, seed_value, PARENT_DIR):
+    mean_iou_score = segmentation_scores[0]
+    olivine_iou_score = segmentation_scores[1]
 
-    mean_dice_score = iou_scores[2]
-    olivine_dice_score = iou_scores[3]
+    # mean_dice_score = segmentation_scores[2]
+    # olivine_dice_score = segmentation_scores[3]
 
     print(f"Mean IoU score: {mean_iou_score:.4f}")
     print(f"Olivine IoU score: {olivine_iou_score:.4f}")
+    # print(f"Mean dice score: {mean_dice_score:.4f}")
+    # print(f"Olivine dice score: {olivine_dice_score:.4f}")
 
     best_iou_score = utils.get_best_iou_score(PARENT_DIR)
     if mean_iou_score > best_iou_score:

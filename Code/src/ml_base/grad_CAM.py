@@ -91,7 +91,8 @@ def get_superimposed_gradcam_img(img, heatmap, cam_path="cam.jpg", alpha=0.8, sa
 
 
 def cam_display(src_img, superimposed_img, img_name, preds, draw_text, cam_img_output_path):
-    text = f'IMG_NAME: {img_name}\nPrediction: {round(preds[0][0], 4)}'
+    prediction = '%.4f' % round(preds[0][0], 4)
+    text = f'IMG_NAME: {img_name}\nPrediction: {prediction}'
     images = [src_img, superimposed_img]
     
     widths, heights = zip(*(i.size for i in images))
@@ -129,6 +130,10 @@ def cam_pipeline(BASE_IMG_DIR, img_name, image_size, model, last_conv_layer_name
     new_image = get_img_array(img_path, image_size=image_size, expand_dims=True, normalize=True)
     preds = model.predict(new_image)
     #print(f"Predictions from grad_CAM.py:cam_pipeline: {preds}")
+    #print(preds[0][0])
+    #print(type(preds))
+    #print(type(preds[0][0]))
+    #print(f"Rounded predictions: {'%.4f' % round(preds[0][0], 4)}")
     #print("Predicted:", decode_predictions(preds, top=1)[0])
 
     # Remove last layer's softmax

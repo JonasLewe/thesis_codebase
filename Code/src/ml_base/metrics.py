@@ -74,7 +74,7 @@ def calc_mean_segmentation_scores(class_1_img_folder, class_0_img_folder, image_
     
     # calculate IoU score for olivine images only
     olivine_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
-    olivine_mean_dice = jaccard_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
+    # olivine_mean_dice = jaccard_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
 
     # predict heatmaps for non-olivine images in validation and test set and add to existing heatmaps
@@ -92,9 +92,9 @@ def calc_mean_segmentation_scores(class_1_img_folder, class_0_img_folder, image_
 
     # calculating the iou value over all images combined 
     global_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
-    global_mean_dice = jaccard_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
+    # global_mean_dice = jaccard_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
-    return global_mean_iou, olivine_mean_iou, global_mean_dice, olivine_mean_dice
+    return [global_mean_iou, olivine_mean_iou]
 
 
 METRICS = [

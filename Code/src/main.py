@@ -156,6 +156,14 @@ if __name__=="__main__":
             # set callbacks for training
             callbacks = [
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0),
+                tf.keras.callbacks.EarlyStopping(monitor="val_loss",
+                                                 min_delta=0,
+                                                 patience=10,
+                                                 verbose=1,
+                                                 mode="auto",
+                                                 baseline=None,
+                                                 restore_best_weights=True,
+                                                )
                 # WandbCallback()
             ]
 
@@ -186,7 +194,7 @@ if __name__=="__main__":
 
             # check if dataset supports segmentation 
             if (class_1_img_folder != ""):
-                iou_scores = metrics.calc_mean_segmentation_scores(class_1_img_folder,
+                segmentation_scores = metrics.calc_mean_segmentation_scores(class_1_img_folder,
                                                              class_0_img_folder,
                                                              image_size, 
                                                              model, 
@@ -197,10 +205,10 @@ if __name__=="__main__":
                                                              cam_img_output_path=GRAD_CAM_IMGS_DIR,
                                                              xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE,
                                                              )
-                mean_iou_score = iou_scores[0]
+                mean_iou_score = segmentation_scores[0]
                 xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
                 # logging.log_data(model, history, accuracy, mean_iou_score)
-                logging.save_best_model(model, iou_scores, seed_value, RUN_DIR)
+                logging.save_best_model(model, segmentation_scores, seed_value, RUN_DIR)
 
         except BaseException as error:
             print(f"Error: {error}")
