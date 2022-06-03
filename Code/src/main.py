@@ -83,7 +83,6 @@ regularization = user_config["regularization"]
 num_hidden_layers = user_config["num_hidden_layers"]
 
 
-
 if not use_gpu:
     # disable GPU
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
