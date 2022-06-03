@@ -78,6 +78,9 @@ use_gpu = user_config["use_gpu"]
 verbose_metrics = user_config["verbose_metrics"]
 early_fusion = user_config["early_fusion"]
 late_fusion = user_config["late_fusion"]
+dropout = user_config["dropout"]
+regularization = user_config["regularization"]
+num_hidden_layers = user_config["num_hidden_layers"]
 
 
 
@@ -166,6 +169,10 @@ if __name__=="__main__":
                                                late_fusion=late_fusion,
                                                epochs=epochs,
                                                batch_size=batch_size,
+                                               learning_rate=learning_rate,
+                                               dropout=dropout,
+                                               regularization=regularization,
+                                               num_hidden_layers=num_hidden_layers
                                                )
 
             accuracy, scores = evaluation.evaluate_model(root_image_folder,
@@ -228,4 +235,4 @@ if __name__=="__main__":
         
         stop = timer()
         elapsed_time = stop - start
-        utils.utils.display_wall_clock_time(elapsed_time, max_seed_value, seed_value) 
+        utils.display_wall_clock_time(elapsed_time, max_seed_value, seed_value) 

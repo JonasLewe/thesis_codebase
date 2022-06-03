@@ -121,20 +121,21 @@ def define_base_model_legacy(learning_rate, image_size=(224, 224), verbose_metri
 
 
 # base model implemented using Functional API
-def define_base_model(learning_rate, image_size=(224, 224), verbose_metrics=False, weighted_loss=False, weight=0.5):
+def define_base_model(learning_rate, image_size=(224, 224), verbose_metrics=False, dropout=0.2, regularization=False, num_hidden_layers=1, weighted_loss=False, weight=0.5):
     input_layer = Input(shape=(image_size[0], image_size[1], 3), name="input_layer")
 
     x = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_layer)
     x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(dropout)(x)
 
-    x = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(x)
-    x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.2)(x)
+    for _ in range(num_hidden_layers):
+        x = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(x)
+        x = MaxPooling2D((2, 2))(x)
+        x = Dropout(dropout)(x)
 
     x = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer')(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(dropout)(x)
 
     x = Flatten()(x)
     x = Dense(128, activation='relu', kernel_initializer='he_uniform')(x)
@@ -147,8 +148,10 @@ def define_base_model(learning_rate, image_size=(224, 224), verbose_metrics=Fals
     opt = Adam(learning_rate)
 
     # add regularization to current model
-    # model = add_regularization(model)
+    if regularization:   
+        model = add_regularization(model)
 
+    # determine metrics used
     if verbose_metrics:
         metrics = METRICS
     else:

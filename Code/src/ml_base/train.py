@@ -8,13 +8,33 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 # run the test harness for evaluating a model
-def train_model(img_root_dir, image_size, callbacks=[], verbose_metrics=False, model_name='base', early_fusion=False, late_fusion=False, epochs=40, batch_size=32, index=22, verbose=1, learning_rate=0.01):
+def train_model(img_root_dir,
+                image_size,
+                callbacks=[],
+                verbose_metrics=False,
+                model_name='base',
+                early_fusion=False,
+                late_fusion=False,
+                epochs=40,
+                batch_size=32,
+                index=22,
+                verbose=1,
+                learning_rate=0.01,
+                dropout=0.2,
+                regularization=False,
+                num_hidden_layers=1):
     # define model
     if model_name == 'base':
         if early_fusion:
             model = define_base_model_early_fusion(learning_rate=learning_rate, verbose_metrics=verbose_metrics, image_size=image_size)
         else:
-            model = define_base_model(learning_rate=learning_rate, verbose_metrics=verbose_metrics, image_size=image_size)
+            model = define_base_model(learning_rate=learning_rate,
+                                      verbose_metrics=verbose_metrics,
+                                      image_size=image_size,
+                                      dropout=dropout,
+                                      regularization=regularization,
+                                      num_hidden_layers=num_hidden_layers,
+                                      )
 
     elif model_name == 'vgg':
         # model = define_vgg_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
