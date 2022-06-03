@@ -96,8 +96,9 @@ for gpu in gpus:
 
 import wandb
 from wandb.keras import WandbCallback
-from ml_base import evaluation, train, seeds, metrics, utils
+from ml_base import evaluation, train, seeds, metrics 
 from log_data import logging, xlsx
+from utils import utils
 
 now = datetime.now()
 current_time = now.strftime("%d_%m_%Y-%H_%M_%S")
@@ -203,6 +204,7 @@ if __name__=="__main__":
                 max_iou_recall = max(xlsx_summary, key=itemgetter(0))[2][1]
                 max_iou_fscore = max(xlsx_summary, key=itemgetter(0))[2][2]
 
+                # save results of best run to xlsx file
                 xlsx.parse_model_output_to_xlsx(run_dir_name, 
                                                 user_config["model_type"], 
                                                 epochs, 
