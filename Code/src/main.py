@@ -78,7 +78,7 @@ use_gpu = user_config["use_gpu"]
 verbose_metrics = user_config["verbose_metrics"]
 early_fusion = user_config["early_fusion"]
 late_fusion = user_config["late_fusion"]
-dropout = user_config["dropout"]
+dropout_value = user_config["dropout_value"]
 regularization = user_config["regularization"]
 num_hidden_layers = user_config["num_hidden_layers"]
 
@@ -156,14 +156,14 @@ if __name__=="__main__":
             # set callbacks for training
             callbacks = [
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0),
-                tf.keras.callbacks.EarlyStopping(monitor="val_loss",
-                                                 min_delta=0,
-                                                 patience=10,
-                                                 verbose=1,
-                                                 mode="auto",
-                                                 baseline=None,
-                                                 restore_best_weights=True,
-                                                )
+                # tf.keras.callbacks.EarlyStopping(monitor="val_loss",
+                #                                  min_delta=0,
+                #                                  patience=10,
+                #                                  verbose=1,
+                #                                  mode="auto",
+                #                                  baseline=None,
+                #                                  restore_best_weights=True,
+                #                                 )
                 # WandbCallback()
             ]
 
@@ -177,7 +177,7 @@ if __name__=="__main__":
                                                epochs=epochs,
                                                batch_size=batch_size,
                                                learning_rate=learning_rate,
-                                               dropout=dropout,
+                                               dropout=dropout_value,
                                                regularization=regularization,
                                                num_hidden_layers=num_hidden_layers
                                                )
@@ -220,29 +220,31 @@ if __name__=="__main__":
         elapsed_time = stop - start
         utils.display_wall_clock_time(elapsed_time, max_seed_value, seed_value) 
 
-        # check if dataset supports segmentation 
-        if (class_1_img_folder != ""):
-            # get results from best round
-            max_iou_score = max(xlsx_summary, key=itemgetter(0))[0]
-            max_iou_seed = max(xlsx_summary, key=itemgetter(0))[1]
-            max_iou_precision = max(xlsx_summary, key=itemgetter(0))[2][0]
-            max_iou_recall = max(xlsx_summary, key=itemgetter(0))[2][1]
-            max_iou_fscore = max(xlsx_summary, key=itemgetter(0))[2][2]
+    # check if dataset supports segmentation 
+    if (class_1_img_folder != ""):
+        # get results from best round
+        max_iou_score = max(xlsx_summary, key=itemgetter(0))[0]
+        max_iou_seed = max(xlsx_summary, key=itemgetter(0))[1]
+        max_iou_precision = max(xlsx_summary, key=itemgetter(0))[2][0]
+        max_iou_recall = max(xlsx_summary, key=itemgetter(0))[2][1]
+        max_iou_fscore = max(xlsx_summary, key=itemgetter(0))[2][2]
 
-            # save results of best run to xlsx file
-            xlsx.parse_model_output_to_xlsx(run_dir_name, 
-                                            user_config["model_type"], 
-                                            epochs, 
-                                            learning_rate, 
-                                            batch_size, 
-                                            iou_threshold,
-                                            max_iou_seed,
-                                            max_seed_value,
-                                            max_iou_score,
-                                            max_iou_precision,
-                                            max_iou_recall,
-                                            max_iou_fscore,
-                                            use_gpu,
-                                            comments,
-                                            XLSX_RESULTS_FILE,
-                                            )
+        # save results of best run to xlsx file
+        xlsx.parse_model_output_to_xlsx(run_dir_name, 
+                                        user_config["model_type"], 
+                                        epochs, 
+                                        learning_rate, 
+                                        batch_size, 
+                                        iou_threshold,
+                                        dropout_value,
+                                        regularization,
+                                        max_iou_seed,
+                                        max_seed_value,
+                                        max_iou_score,
+                                        max_iou_precision,
+                                        max_iou_recall,
+                                        max_iou_fscore,
+                                        use_gpu,
+                                        comments,
+                                        XLSX_RESULTS_FILE,
+                                        )

@@ -5,11 +5,11 @@ model_type: "base"
 early_fusion: 0
 late_fusion: 0
 verbose_metrics: 1
-epochs: 100 
+epochs: 40 
 batch_size: 32 
 learning_rate: 0.001
 iou_threshold: 0.01
-dropout: 0.2
+dropout_value: 0.5
 regularization: 0
 num_hidden_layers: 1
 wand_api_key: "0faedda74fb94f1193e4db4bef4c31027efc978f"
