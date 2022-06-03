@@ -186,7 +186,7 @@ if __name__=="__main__":
 
             # check if dataset supports segmentation 
             if (class_1_img_folder != ""):
-                iou_scores = metrics.calc_mean_iou_scores(class_1_img_folder,
+                iou_scores = metrics.calc_mean_segmentation_scores(class_1_img_folder,
                                                              class_0_img_folder,
                                                              image_size, 
                                                              model, 
@@ -197,41 +197,44 @@ if __name__=="__main__":
                                                              cam_img_output_path=GRAD_CAM_IMGS_DIR,
                                                              xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE,
                                                              )
-
                 mean_iou_score = iou_scores[0]
                 xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
                 # logging.log_data(model, history, accuracy, mean_iou_score)
                 logging.save_best_model(model, iou_scores, seed_value, RUN_DIR)
 
-                # get results from best round
-                max_iou_score = max(xlsx_summary, key=itemgetter(0))[0]
-                max_iou_seed = max(xlsx_summary, key=itemgetter(0))[1]
-                max_iou_precision = max(xlsx_summary, key=itemgetter(0))[2][0]
-                max_iou_recall = max(xlsx_summary, key=itemgetter(0))[2][1]
-                max_iou_fscore = max(xlsx_summary, key=itemgetter(0))[2][2]
-
-                # save results of best run to xlsx file
-                xlsx.parse_model_output_to_xlsx(run_dir_name, 
-                                                user_config["model_type"], 
-                                                epochs, 
-                                                learning_rate, 
-                                                batch_size, 
-                                                iou_threshold,
-                                                max_iou_seed,
-                                                max_seed_value,
-                                                max_iou_score,
-                                                max_iou_precision,
-                                                max_iou_recall,
-                                                max_iou_fscore,
-                                                use_gpu,
-                                                comments,
-                                                XLSX_RESULTS_FILE,
-                                                )
         except BaseException as error:
             print(f"Error: {error}")
             # remove all folders for current run
             shutil.rmtree(RUN_DIR)
-        
+
+        # calculate time elapsed        
         stop = timer()
         elapsed_time = stop - start
         utils.display_wall_clock_time(elapsed_time, max_seed_value, seed_value) 
+
+        # check if dataset supports segmentation 
+        if (class_1_img_folder != ""):
+            # get results from best round
+            max_iou_score = max(xlsx_summary, key=itemgetter(0))[0]
+            max_iou_seed = max(xlsx_summary, key=itemgetter(0))[1]
+            max_iou_precision = max(xlsx_summary, key=itemgetter(0))[2][0]
+            max_iou_recall = max(xlsx_summary, key=itemgetter(0))[2][1]
+            max_iou_fscore = max(xlsx_summary, key=itemgetter(0))[2][2]
+
+            # save results of best run to xlsx file
+            xlsx.parse_model_output_to_xlsx(run_dir_name, 
+                                            user_config["model_type"], 
+                                            epochs, 
+                                            learning_rate, 
+                                            batch_size, 
+                                            iou_threshold,
+                                            max_iou_seed,
+                                            max_seed_value,
+                                            max_iou_score,
+                                            max_iou_precision,
+                                            max_iou_recall,
+                                            max_iou_fscore,
+                                            use_gpu,
+                                            comments,
+                                            XLSX_RESULTS_FILE,
+                                            )

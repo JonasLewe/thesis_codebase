@@ -136,18 +136,20 @@ def train_model(img_root_dir,
     
         # prepare iterators
         train_generator = train_datagen.flow_from_directory(os.path.join(img_root_dir, 'train'),
-                                                     class_mode='binary',
-                                                     color_mode='rgb',
-                                                     batch_size=batch_size,
-                                                     target_size=image_size,
-                                                     shuffle=True)
+                                                            class_mode='binary',
+                                                            color_mode='rgb',
+                                                            batch_size=batch_size,
+                                                            target_size=image_size,
+                                                            #shuffle=True,
+                                                           )
     
         val_generator = val_datagen.flow_from_directory(os.path.join(img_root_dir, 'validation'),
-                                                   class_mode='binary', 
-                                                   color_mode='rgb',
-                                                   batch_size=batch_size, 
-                                                   target_size=image_size,
-                                                   shuffle=True)
+                                                        class_mode='binary', 
+                                                        color_mode='rgb',
+                                                        batch_size=batch_size, 
+                                                        target_size=image_size,
+                                                        #shuffle=True,
+                                                       )
     
         # calculate class weights
         counter = Counter(train_generator.classes)

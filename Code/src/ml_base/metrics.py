@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from skimage.transform import resize
+from sklearn.metrics import jaccard_score
 from ml_base.grad_CAM import cam_pipeline 
 from utils.img import get_json_img_name, draw_json_polygons
 from utils.utils import get_val_test_data
@@ -38,11 +39,17 @@ def calc_iou_score(y_true, y_pred):
 #     return mean_iou
 
 
-def calc_mean_iou_scores(class_1_img_folder, class_0_img_folder, image_size, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path, xlsx_input_split_file):
-    print("Calculating IoU scores...")
+def calc_mean_segmentation_scores(class_1_img_folder, class_0_img_folder, image_size, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path, xlsx_input_split_file):
+    print("Calculating segmentation scores...")
     valset, testset = get_val_test_data(xlsx_input_split_file)
     predicted_binary_added_heatmaps = np.zeros([0])
     ground_truth_added_heatmaps = np.zeros([0])
+
+    predicted_binary_added_heatmaps_olivine = np.zeros([0])
+    ground_truth_added_heatmaps_olivine = np.zeros([0])
+
+    predicted_binary_added_heatmaps_non_olivine = np.zeros([0])
+    ground_truth_added_heatmaps_non_olivine = np.zeros([0])
 
     # predict heatmaps for olivine images
     for json_file_name in os.listdir(polygon_label_folder):
@@ -67,6 +74,7 @@ def calc_mean_iou_scores(class_1_img_folder, class_0_img_folder, image_size, mod
     
     # calculate IoU score for olivine images only
     olivine_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
+    olivine_mean_dice = jaccard_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
 
     # predict heatmaps for non-olivine images in validation and test set and add to existing heatmaps
@@ -76,15 +84,17 @@ def calc_mean_iou_scores(class_1_img_folder, class_0_img_folder, image_size, mod
             if id in file:
                 pred_heatmap = cam_pipeline(class_0_img_folder, file, image_size, model, last_conv_layer_name, draw_text=False)
                 predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
-                ground_truth_heatmap = np.zeros(predicted_binary_heatmap.shape)
+                # create empty ground truth heatmap, since it is expected to not detect any olivine in non-olivine images
+                ground_truth_heatmap = np.zeros(predicted_binary_heatmap.shape) 
                 predicted_binary_added_heatmaps = np.concatenate((predicted_binary_added_heatmaps, predicted_binary_heatmap.flatten()), axis=None)
                 ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
 
 
     # calculating the iou value over all images combined 
     global_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
+    global_mean_dice = jaccard_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
-    return global_mean_iou, olivine_mean_iou
+    return global_mean_iou, olivine_mean_iou, global_mean_dice, olivine_mean_dice
 
 
 METRICS = [

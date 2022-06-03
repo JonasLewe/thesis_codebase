@@ -11,6 +11,9 @@ def save_best_model(model, iou_scores, seed_value, PARENT_DIR):
     mean_iou_score = iou_scores[0]
     olivine_iou_score = iou_scores[1]
 
+    mean_dice_score = iou_scores[2]
+    olivine_dice_score = iou_scores[3]
+
     print(f"Mean IoU score: {mean_iou_score:.4f}")
     print(f"Olivine IoU score: {olivine_iou_score:.4f}")
 
