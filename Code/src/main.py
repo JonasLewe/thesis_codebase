@@ -156,14 +156,14 @@ if __name__=="__main__":
             # set callbacks for training
             callbacks = [
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0),
-                # tf.keras.callbacks.EarlyStopping(monitor="val_loss",
-                #                                  min_delta=0,
-                #                                  patience=10,
-                #                                  verbose=1,
-                #                                  mode="auto",
-                #                                  baseline=None,
-                #                                  restore_best_weights=True,
-                #                                 )
+                #tf.keras.callbacks.EarlyStopping(monitor="val_auc",
+                #                                 min_delta=0,
+                #                                 patience=30,
+                #                                 verbose=1,
+                #                                 mode="max",
+                #                                 baseline=None,
+                #                                 restore_best_weights=True,
+                #                                )
                 # WandbCallback()
             ]
 

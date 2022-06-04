@@ -38,7 +38,7 @@ def train_model(img_root_dir,
 
     elif model_name == 'vgg':
         # model = define_vgg_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
-        model = create_dummy_model(learning_rate=learning_rate)
+        model = create_dummy_model(learning_rate=learning_rate, verbose_metrics=verbose_metrics, regularization=regularization)
 
     if early_fusion:
         xpl_root_dir = img_root_dir

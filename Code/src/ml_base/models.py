@@ -147,10 +147,6 @@ def define_base_model(learning_rate, image_size=(224, 224), verbose_metrics=Fals
     # opt = SGD(lr=0.001, momentum=0.9)
     opt = Adam(learning_rate)
 
-    # add regularization to current model
-    if regularization:   
-        model = add_regularization(model)
-
     # determine metrics used
     if verbose_metrics:
         metrics = METRICS
@@ -158,6 +154,10 @@ def define_base_model(learning_rate, image_size=(224, 224), verbose_metrics=Fals
         metrics = ['accuracy']
 
     model = Model(inputs=input_layer, outputs=output_layer)
+
+    # add regularization to current model
+    if regularization:   
+        model = add_regularization(model)
 
     model.compile(optimizer=opt, loss='binary_crossentropy', metrics=metrics)
     # print(model.summary())
@@ -227,7 +227,7 @@ def define_vgg_model_simple(learning_rate, image_size=(224, 224), verbose_metric
     return base_model
 
 
-def create_dummy_model(learning_rate=0.01, input_shape=(224,224,3), n_classes=1, fine_tune=0):
+def create_dummy_model(learning_rate=0.01, input_shape=(224,224,3), verbose_metrics=False, regularization=False, n_classes=1, fine_tune=0):
     """
     This is a Functional API version of the Sequential VGG model above
     Compiles a model integrated with VGG16 pretrained layers
@@ -269,9 +269,19 @@ def create_dummy_model(learning_rate=0.01, input_shape=(224,224,3), n_classes=1,
 
     optimizer = Adam(learning_rate=learning_rate)
 
+    # add regularization to current model
+    if regularization:   
+        model = add_regularization(model)
+
+    # determine metrics used
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
+
     # Compiles the model for training.
     model.compile(optimizer=optimizer, 
                   loss='binary_crossentropy',
-                  metrics=['accuracy'])
+                  metrics=metrics)
     
     return model
