@@ -59,8 +59,23 @@ root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["
 # root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data_small"])
 # root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data_undersampled"])
 
-class_1_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder"])
-class_0_img_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder"])
+class_0_img_folder_ppl_merged = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_ppl_merged"])
+class_0_img_folder_ppl_0 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_ppl_0"])
+class_0_img_folder_ppl_30 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_ppl_30"])
+class_0_img_folder_ppl_60 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_ppl_60"])
+class_0_img_folder_xpl_merged = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_xpl_merged"])
+class_0_img_folder_xpl_0 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_xpl_0"])
+class_0_img_folder_xpl_30 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_xpl_30"])
+class_0_img_folder_xpl_60 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_xpl_60"])
+class_1_img_folder_ppl_merged = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder_ppl_merged"])
+class_1_img_folder_ppl_0 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder_ppl_0"])
+class_1_img_folder_ppl_30 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder_ppl_30"])
+class_1_img_folder_ppl_60 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder_ppl_60"])
+class_1_img_folder_xpl_merged = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder_xpl_merged"])
+class_1_img_folder_xpl_0 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder_xpl_0"])
+class_1_img_folder_xpl_30 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder_xpl_30"])
+class_1_img_folder_xpl_60 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_1_img_folder_xpl_60"])
+
 polygon_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["polygon_label_folder"])
 voc_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["voc_label_folder"])
 last_conv_layer_name = base_config[user_config["model_type"]]["last_conv_layer_name"]
@@ -68,6 +83,7 @@ image_size = (base_config["global"]["img_size"], base_config["global"]["img_size
 max_seed_value = base_config["global"]["max_seed_value"]
 xlsx_results_filename = base_config["xlsx_results_filepath"]
 xlsx_input_split_filename = base_config["xlsx_input_split_filepath"]
+
 
 # Read varlables from user config
 epochs = user_config["epochs"]
@@ -77,7 +93,8 @@ iou_threshold = user_config["iou_threshold"]
 use_gpu = user_config["use_gpu"]
 verbose_metrics = user_config["verbose_metrics"]
 early_fusion = user_config["early_fusion"]
-late_fusion = user_config["late_fusion"]
+fusion_technique = user_config["fusion_technique"]
+input_size = user_config["input_size"]
 dropout_value = user_config["dropout_value"]
 regularization = user_config["regularization"]
 num_hidden_layers = user_config["num_hidden_layers"]
@@ -156,55 +173,111 @@ if __name__=="__main__":
             # set callbacks for training
             callbacks = [
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0),
-                #tf.keras.callbacks.EarlyStopping(monitor="val_auc",
-                #                                 min_delta=0,
-                #                                 patience=30,
-                #                                 verbose=1,
-                #                                 mode="max",
-                #                                 baseline=None,
-                #                                 restore_best_weights=True,
-                #                                )
+                tf.keras.callbacks.EarlyStopping(monitor="val_loss",
+                                                 min_delta=0,
+                                                 patience=40,
+                                                 verbose=1,
+                                                 mode="min",
+                                                 baseline=None,
+                                                 restore_best_weights=True,
+                                                )
                 # WandbCallback()
             ]
 
-            model, history = train.train_model(root_image_folder,
-                                               image_size,
-                                               callbacks=callbacks,
-                                               verbose_metrics=verbose_metrics,
-                                               model_name=user_config["model_type"],
-                                               early_fusion=early_fusion,
-                                               late_fusion=late_fusion,
-                                               epochs=epochs,
-                                               batch_size=batch_size,
-                                               learning_rate=learning_rate,
-                                               dropout=dropout_value,
-                                               regularization=regularization,
-                                               num_hidden_layers=num_hidden_layers
-                                               )
+            # if model is a single-view model
+            if input_size == 0:
+                model, history = train.train_model_single_view(root_image_folder,
+                                                image_size,
+                                                callbacks=callbacks,
+                                                verbose_metrics=verbose_metrics,
+                                                model_name=user_config["model_type"],
+                                                epochs=epochs,
+                                                batch_size=batch_size,
+                                                learning_rate=learning_rate,
+                                                dropout=dropout_value,
+                                                regularization=regularization,
+                                                num_hidden_layers=num_hidden_layers
+                                                )
 
-            accuracy, scores = evaluation.evaluate_model(root_image_folder,
+                accuracy, scores = evaluation.evaluate_model(root_image_folder,
                                                          image_size,
                                                          model,
                                                          history,
                                                          log_dir=SUB_DIR,
                                                          verbose_metrics=verbose_metrics,
-                                                         early_fusion=early_fusion,
-                                                         late_fusion=late_fusion,
-                                                         )
+                                                        )
+
+            # if model is a multi-view model
+            else:
+                model, history = train.train_model_multi_view(root_image_folder,
+                                                image_size,
+                                                callbacks=callbacks,
+                                                verbose_metrics=verbose_metrics,
+                                                model_name=user_config["model_type"],
+                                                early_fusion=early_fusion,
+                                                fusion_technique=fusion_technique,
+                                                input_size=input_size,
+                                                epochs=epochs,
+                                                batch_size=batch_size,
+                                                learning_rate=learning_rate,
+                                                dropout=dropout_value,
+                                                regularization=regularization,
+                                                num_hidden_layers=num_hidden_layers
+                                                )
+
+                accuracy, scores = evaluation.evaluate_model_multi_view(root_image_folder,
+                                                         image_size,
+                                                         model,
+                                                         history,
+                                                         log_dir=SUB_DIR,
+                                                         verbose_metrics=verbose_metrics,
+                                                         input_size=input_size
+                                                        )
 
             # check if dataset supports segmentation 
-            if (class_1_img_folder != ""):
-                segmentation_scores = metrics.calc_mean_segmentation_scores(class_1_img_folder,
-                                                             class_0_img_folder,
-                                                             image_size, 
-                                                             model, 
-                                                             polygon_label_folder, 
-                                                             voc_label_folder, 
-                                                             last_conv_layer_name, 
-                                                             iou_threshold,
-                                                             cam_img_output_path=GRAD_CAM_IMGS_DIR,
-                                                             xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE,
-                                                             )
+            if (class_1_img_folder_xpl_merged != ""):
+                if input_size == 1: # single view is selected
+                    segmentation_scores = metrics.calc_mean_segmentation_scores_single_input(
+                                                                class_0_img_folder_xpl_merged,
+                                                                class_1_img_folder_xpl_merged,
+                                                                image_size, 
+                                                                model, 
+                                                                polygon_label_folder, 
+                                                                voc_label_folder, 
+                                                                last_conv_layer_name, 
+                                                                iou_threshold,
+                                                                cam_img_output_path=GRAD_CAM_IMGS_DIR,
+                                                                xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE,
+                                                                )
+                else: # multi-view is selected
+                    segmentation_scores = metrics.calc_mean_segmentation_scores_multi_input(
+                                                                class_0_img_folder_ppl_0,
+                                                                class_0_img_folder_ppl_30,
+                                                                class_0_img_folder_ppl_60,
+                                                                class_0_img_folder_ppl_merged,
+                                                                class_0_img_folder_xpl_0,
+                                                                class_0_img_folder_xpl_30,
+                                                                class_0_img_folder_xpl_60,
+                                                                class_0_img_folder_xpl_merged,
+                                                                class_1_img_folder_ppl_0,
+                                                                class_1_img_folder_ppl_30,
+                                                                class_1_img_folder_ppl_60,
+                                                                class_1_img_folder_ppl_merged,
+                                                                class_1_img_folder_xpl_0,
+                                                                class_1_img_folder_xpl_30,
+                                                                class_1_img_folder_xpl_60,
+                                                                class_1_img_folder_xpl_merged,
+                                                                input_size,
+                                                                image_size, 
+                                                                model, 
+                                                                polygon_label_folder, 
+                                                                voc_label_folder, 
+                                                                last_conv_layer_name, 
+                                                                iou_threshold,
+                                                                cam_img_output_path=GRAD_CAM_IMGS_DIR,
+                                                                xlsx_input_split_file=XLSX_INPUT_SPLIT_FILE,
+                                                                )
+
                 mean_iou_score = segmentation_scores[0]
                 xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
                 # logging.log_data(model, history, accuracy, mean_iou_score)
@@ -221,7 +294,7 @@ if __name__=="__main__":
         utils.display_wall_clock_time(elapsed_time, max_seed_value, seed_value) 
 
     # check if dataset supports segmentation 
-    if (class_1_img_folder != ""):
+    if (class_1_img_folder_xpl_merged != ""):
         # get results from best round
         max_iou_score = max(xlsx_summary, key=itemgetter(0))[0]
         max_iou_seed = max(xlsx_summary, key=itemgetter(0))[1]

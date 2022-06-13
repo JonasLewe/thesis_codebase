@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from utils.joined_generator import JoinedGenerator
+from utils import joined_generator
 from matplotlib import pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report, precision_recall_fscore_support 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -102,67 +102,125 @@ def show_results(model, test_generator, log_dir) -> None:
     return scores
 
 
-def evaluate_model(img_root_dir, image_size, model, history, log_dir="", verbose_metrics=False, early_fusion=False, late_fusion=False):
-    if early_fusion:
-        ppl_root_dir = f"{img_root_dir}_ppl"
-        xpl_root_dir = img_root_dir
-        
-        ppl_test_datagen = ImageDataGenerator(rescale=1.0/255.0)
-        xpl_test_datagen = ImageDataGenerator(rescale=1.0/255.0)
+def evaluate_model(img_root_dir, image_size, model, history, log_dir="", verbose_metrics=False):
+    test_datagen = ImageDataGenerator(rescale=1.0/255.0)
+    test_generator = test_datagen.flow_from_directory(os.path.join(img_root_dir, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
 
-        ppl_test_generator = ppl_test_datagen.flow_from_directory(os.path.join(ppl_root_dir, 'test'),
-                                                   class_mode='binary',
-                                                   color_mode='rgb',
-                                                   target_size=image_size,
-                                                   batch_size=1,
-                                                   shuffle=False,)
-        
-        xpl_test_generator = xpl_test_datagen.flow_from_directory(os.path.join(xpl_root_dir, 'test'),
-                                                   class_mode='binary',
-                                                   color_mode='rgb',
-                                                   target_size=image_size,
-                                                   batch_size=1,
-                                                   shuffle=False,)
-
-        test_generator = JoinedGenerator(ppl_test_generator, xpl_test_generator)
-
-        # Calculate metrics results
-        if verbose_metrics:
-            _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(ppl_test_generator), verbose=1)
-            print('\nAccuracy on test set: %.3f' % (acc * 100.0))
-            summarize_diagnostics_verbose(history, log_dir)
-        else:
-            _, acc = model.evaluate(test_generator, steps=len(ppl_test_generator), verbose=1)
-            print('\nAccuracy on test set: %.3f' % (acc * 100.0))
-            summarize_diagnostics_base(history, log_dir)
-
-        # plot confusion matrix and results
-        scores = show_results(model, test_generator, log_dir)
-    
-    elif late_fusion:
-        pass
-
+    # Calculate metrics results
+    if verbose_metrics:
+        _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
+        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+        summarize_diagnostics_verbose(history, log_dir)
     else:
-        test_datagen = ImageDataGenerator(rescale=1.0/255.0)
-        test_generator = test_datagen.flow_from_directory(os.path.join(img_root_dir, 'test'),
-                                                   class_mode='binary',
-                                                   color_mode='rgb',
-                                                   target_size=image_size,
-                                                   batch_size=1,
-                                                   shuffle=False,)
+        _, acc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
+        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+        summarize_diagnostics_base(history, log_dir)
 
-        # Calculate metrics results
-        if verbose_metrics:
-            _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
-            print('\nAccuracy on test set: %.3f' % (acc * 100.0))
-            summarize_diagnostics_verbose(history, log_dir)
-        else:
-            _, acc = model.evaluate(test_generator, steps=len(test_generator), verbose=1)
-            print('\nAccuracy on test set: %.3f' % (acc * 100.0))
-            summarize_diagnostics_base(history, log_dir)
+    # plot confusion matrix and results
+    scores = show_results(model, test_generator, log_dir)
+    
+    return acc, scores
 
-        # plot confusion matrix and results
-        scores = show_results(model, test_generator, log_dir)
+
+def evaluate_model_multi_view(img_root_dir, image_size, model, history, log_dir="", verbose_metrics=False, input_size=6):
+    ppl_root_dir0 = f"{img_root_dir}_ppl_0"
+    ppl_root_dir30 = f"{img_root_dir}_ppl_30"
+    ppl_root_dir60 = f"{img_root_dir}_ppl_60"
+    ppl_root_dir_merged = f"{img_root_dir}_ppl"
+
+    xpl_root_dir0 = f"{img_root_dir}_xpl_0"
+    xpl_root_dir30 = f"{img_root_dir}_xpl_30"
+    xpl_root_dir60 = f"{img_root_dir}_xpl_60"
+    xpl_root_dir_merged = img_root_dir
+    
+    test_datagen = ImageDataGenerator(rescale=1.0/255.0)
+
+    ppl_test_generator0 = test_datagen.flow_from_directory(os.path.join(ppl_root_dir0, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+
+    ppl_test_generator30 = test_datagen.flow_from_directory(os.path.join(ppl_root_dir30, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+    
+    ppl_test_generator60 = test_datagen.flow_from_directory(os.path.join(ppl_root_dir60, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+
+    ppl_test_generator_merged = test_datagen.flow_from_directory(os.path.join(ppl_root_dir_merged, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+    
+    xpl_test_generator0 = test_datagen.flow_from_directory(os.path.join(xpl_root_dir0, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+
+    
+    xpl_test_generator30 = test_datagen.flow_from_directory(os.path.join(xpl_root_dir30, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+    
+    xpl_test_generator60 = test_datagen.flow_from_directory(os.path.join(xpl_root_dir60, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+
+    xpl_test_generator_merged = test_datagen.flow_from_directory(os.path.join(xpl_root_dir_merged, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+
+    if input_size == 2:
+        test_generator = joined_generator.JoinedGenerator2View(ppl_test_generator_merged, xpl_test_generator_merged)
+    elif input_size == 3:
+        test_generator = joined_generator.JoinedGenerator3View(xpl_test_generator0, xpl_test_generator30, xpl_test_generator60)
+    else: # default: input_size == 6
+        test_generator = joined_generator.JoinedGenerator6View(ppl_test_generator0, 
+                                                               ppl_test_generator30, 
+                                                               ppl_test_generator60, 
+                                                               xpl_test_generator0, 
+                                                               xpl_test_generator30, 
+                                                               xpl_test_generator60)
+
+    # Calculate metrics results
+    if verbose_metrics:
+        _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(ppl_test_generator0), verbose=1)
+        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+        summarize_diagnostics_verbose(history, log_dir)
+    else:
+        _, acc = model.evaluate(test_generator, steps=len(ppl_test_generator0), verbose=1)
+        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+        summarize_diagnostics_base(history, log_dir)
+
+    # plot confusion matrix and results
+    scores = show_results(model, test_generator, log_dir)
     
     return acc, scores
 

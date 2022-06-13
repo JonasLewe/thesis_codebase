@@ -1,16 +1,17 @@
-use_gpu: 1
-parent_dir: "debugging"
-dataset: "olivine"
-model_type: "vgg"
-early_fusion: 0
-late_fusion: 0
-verbose_metrics: 1
-epochs: 45 
-batch_size: 32 
-learning_rate: 0.001
-optimizer: "adam"
-iou_threshold: 0.01
-dropout_value: 0.2
-regularization: 0
-num_hidden_layers: 1
+use_gpu: 1              # 0: Off, 1: On
+parent_dir: "debugging" # Default: "debugging"
+dataset: "olivine"      # Default: "olivine"
+model_type: "base"      # Default: "base"
+early_fusion: 1         # 0: mid-fusion, 1: early-fusion
+fusion_technique: 2     # 0: Max, 1: Avg, 2: Concat
+input_size: 2            # 1: Single xpl view, 2: Dual ppl&xpl view, 3: Three xpl views 6: Full size 6 input ppl/xpl model
+verbose_metrics: 1      # 0: Off, 1: On
+epochs: 2               # Default: 45
+batch_size: 8           # Default: 8
+learning_rate: 0.001    # Default: 0.001
+optimizer: "adam"       # Default: "adam"
+iou_threshold: 0.01     # Default: 0.01
+dropout_value: 0.2      # Default: 0.2
+regularization: 1       # 0: Off, 1: On
+num_hidden_layers: 1    # Default: 1
 wand_api_key: "0faedda74fb94f1193e4db4bef4c31027efc978f"

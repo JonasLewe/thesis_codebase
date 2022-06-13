@@ -6,9 +6,10 @@ import tensorflow as tf
 from tensorflow.keras import Input
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications import VGG16, ResNet50
 from tensorflow.keras.layers.experimental.preprocessing import Rescaling # not available in tensorflow=2.1
-from tensorflow.keras.layers import Dropout, Conv2D, MaxPooling2D, Dense, Flatten, Concatenate
+from tensorflow.keras.layers import Dropout, Conv2D, MaxPooling2D, Dense, Flatten, Concatenate, Maximum, Average
+from tensorflow.keras.utils import plot_model
 
 
 def add_regularization(model, regularizer=tf.keras.regularizers.l2(l2=0.0001)):
@@ -41,87 +42,33 @@ def weighted_loss(weight):
     # TODO
     pass
 
+def weighted_bincrossentropy(true, pred, weights={0: 1, 1: 3.02}):
+    """
+    Calculates weighted binary cross entropy. The weights are fixed.
+        
+    This can be useful for unbalanced catagories.
 
-def define_base_model_early_fusion(learning_rate, image_size=(224, 224), verbose_metrics=False, weighted_loss=False, weight=0.5):
-    input_ppl = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl")
-    input_xpl = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl")
+    Adjust the weights here depending on what is required.
 
-    merge = Concatenate()([input_ppl, input_xpl])
+    For example if there are 10x as many positive classes as negative classes,
+        if you adjust weight_zero = 1.0, weight_one = 0.1, then false positives 
+        will be penalize 10 times as much as false negatives.
+    """
+    weight_zero = 1   #weights[0]
+    weight_one = 3.02 #weights[1]
 
-    x = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(merge)
-    x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.2)(x)
+    # calculate the binary cross entropy
+    bin_crossentropy = tf.keras.backend.binary_crossentropy(true, pred)
 
-    x = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(x)
-    x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.2)(x)
+    # apply the weights
+    weights = true * weight_one + (1. - true) * weight_zero
+    weighted_bin_crossentropy = weights * bin_crossentropy 
 
-    x = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer')(x)
-    x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.2)(x)
-
-    x = Flatten()(x)
-    x = Dense(128, activation='relu', kernel_initializer='he_uniform')(x)
-    x = Dropout(0.5)(x)
-
-    output_layer = Dense(1, activation="sigmoid")(x)
-
-    opt = Adam(learning_rate)
-
-    if verbose_metrics:
-        metrics = METRICS
-    else:
-        metrics = ['accuracy']
-
-    # metrics = tf.keras.metrics.CategoricalAccuracy()
-    
-    model = Model(inputs=[input_ppl, input_xpl], outputs=output_layer)
-
-    model.compile(optimizer=opt, loss='binary_crossentropy', metrics=metrics)
-
-    return model
-
-
-# define basic cnn model
-def define_base_model_legacy(learning_rate, image_size=(224, 224), verbose_metrics=False, weighted_loss=False, weight=0.5):
-    input_shape=(image_size[0], image_size[1], 3)
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_shape))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
-    model.add(Flatten())
-    model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
-    model.add(Dropout(0.5))
-    if weighted_loss:
-        model.add(Dense(1))
-        loss = weighted_loss(weight=weight)
-    else:
-        model.add(Dense(1, activation='sigmoid'))
-    
-    # compile model
-    # opt = SGD(lr=0.001, momentum=0.9)
-    opt = Adam(learning_rate)
-
-    # add regularization to current model
-    # model = add_regularization(model)
-
-    if verbose_metrics:
-        metrics = METRICS
-    else:
-        metrics = ['accuracy']
-    model.compile(optimizer=opt, loss='binary_crossentropy', metrics=metrics)
-    # print(model.summary())
-    return model
+    return tf.keras.backend.mean(weighted_bin_crossentropy)
 
 
 # base model implemented using Functional API
-def define_base_model(learning_rate, image_size=(224, 224), verbose_metrics=False, dropout=0.2, regularization=False, num_hidden_layers=1, weighted_loss=False, weight=0.5):
+def define_base_model_single_xpl(learning_rate, image_size=(224, 224), verbose_metrics=False, dropout=0.2, regularization=False, num_hidden_layers=1, weighted_loss=False, weight=0.5):
     input_layer = Input(shape=(image_size[0], image_size[1], 3), name="input_layer")
 
     x = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_layer)
@@ -159,6 +106,471 @@ def define_base_model(learning_rate, image_size=(224, 224), verbose_metrics=Fals
     if regularization:   
         model = add_regularization(model)
 
+    model.compile(optimizer=opt, loss=weighted_bincrossentropy, metrics=metrics)
+    # print(model.summary())
+    return model
+
+
+# multi-view model with fusion at the top
+def define_base_model_early_fusion_2_view(learning_rate, image_size=(224, 224), fusion_technique=2, verbose_metrics=False, weighted_loss=False, weight=0.5):
+    # This model performs early fusion right at the top layer
+    # Fusion Techniques:
+    # 0: Max Fusion
+    # 1: Average Fusion
+    # 2: Concatenation
+
+    input_ppl = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl")
+    input_xpl = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl")
+
+    # merge ppl and xpl parts
+    if fusion_technique == 0:
+        model_merge = Maximum()([input_ppl, input_xpl])
+    elif fusion_technique == 1:
+        model_merge = Average()([input_ppl, input_xpl])
+    else:
+        model_merge = Concatenate()([input_ppl, input_xpl])
+
+    x = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_merge)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Flatten()(x)
+    x = Dense(128, activation='relu', kernel_initializer='he_uniform')(x)
+    x = Dropout(0.5)(x)
+
+    output_layer = Dense(1, activation="sigmoid")(x)
+
+    opt = Adam(learning_rate)
+
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
+
+    # metrics = tf.keras.metrics.CategoricalAccuracy()
+    
+    model = Model(inputs=[input_ppl, input_xpl], outputs=output_layer)
+
+    model.compile(optimizer=opt, loss=weighted_bincrossentropy, metrics=metrics)
+
+    return model
+
+
+# multi-view model with fusion before last convolutional layer
+def define_base_model_mid_fusion_2_view(learning_rate, image_size=(224, 224), fusion_technique=2, verbose_metrics=False, weighted_loss=False, weight=0.5):
+    # This model fuses the two views right before the 
+    # Fusion Techniques:
+    # 0: Max Fusion
+    # 1: Average Fusion
+    # 2: Concatenation
+    
+    # define inputs
+    input_ppl = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl")
+    input_xpl = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl")
+
+    # define ppl part of the network until last conv layer
+    model_ppl = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_ppl)
+    model_ppl = MaxPooling2D((2, 2))(model_ppl)
+    model_ppl = Dropout(0.2)(model_ppl)
+
+    model_ppl = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_ppl)
+    model_ppl = MaxPooling2D((2, 2))(model_ppl)
+    model_ppl = Dropout(0.2)(model_ppl)
+
+    # define xpl part of the network until last conv layer
+    model_xpl = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_xpl)
+    model_xpl = MaxPooling2D((2, 2))(model_xpl)
+    model_xpl = Dropout(0.2)(model_xpl)
+
+    model_xpl = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_xpl)
+    model_xpl = MaxPooling2D((2, 2))(model_xpl)
+    model_xpl = Dropout(0.2)(model_xpl)
+
+    # merge ppl and xpl parts
+    if fusion_technique == 0:
+        model_merge = Maximum()([model_ppl, model_xpl])
+    elif fusion_technique == 1:
+        model_merge = Average()([model_ppl, model_xpl])
+    else:
+        model_merge = Concatenate()([model_ppl, model_xpl])
+
+    model_merge = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer')(model_merge)
+    model_merge = MaxPooling2D((2, 2))(model_merge)
+    model_merge = Dropout(0.2)(model_merge)
+
+    model_merge = Flatten()(model_merge)
+    model_merge = Dense(128, activation='relu', kernel_initializer='he_uniform')(model_merge)
+    model_merge = Dropout(0.5)(model_merge)
+
+    output_layer = Dense(1, activation="sigmoid")(model_merge)
+
+    opt = Adam(learning_rate)
+
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
+
+    # metrics = tf.keras.metrics.CategoricalAccuracy()
+    
+    # define final model
+    model = Model(inputs=[input_ppl, input_xpl], outputs=output_layer)
+
+    # plot model
+    # plot_model(model, to_file="my_awesome_path")
+
+    model.compile(optimizer=opt, loss=weighted_bincrossentropy, metrics=metrics)
+
+    return model
+
+
+# multi-view model with fusion at the top
+def define_base_model_early_fusion_3_view(learning_rate, image_size=(224, 224), fusion_technique=2, verbose_metrics=False, weighted_loss=False, weight=0.5):
+    # This model performs early fusion right at the top layer
+    # It fuses 3 different views of xpl images
+    # Fusion Techniques:
+    # 0: Max Fusion
+    # 1: Average Fusion
+    # 2: Concatenation
+
+    # define inputs
+
+    input_xpl0 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl0")
+    input_xpl30 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl30")
+    input_xpl60 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl60")
+
+    # merge ppl and xpl parts
+    if fusion_technique == 0:
+        model_merge = Maximum()([input_xpl0, input_xpl30, input_xpl60])
+    elif fusion_technique == 1:
+        model_merge = Average()([input_xpl0, input_xpl30, input_xpl60])
+    else:
+        model_merge = Concatenate()([input_xpl0, input_xpl30, input_xpl60])
+
+    x = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_merge)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Flatten()(x)
+    x = Dense(128, activation='relu', kernel_initializer='he_uniform')(x)
+    x = Dropout(0.5)(x)
+
+    output_layer = Dense(1, activation="sigmoid")(x)
+
+    opt = Adam(learning_rate)
+
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
+
+    # metrics = tf.keras.metrics.CategoricalAccuracy()
+    
+    model = Model(inputs=[input_xpl0, input_xpl30, input_xpl60], outputs=output_layer)
+
+    model.compile(optimizer=opt, loss=weighted_bincrossentropy, metrics=metrics)
+
+    return model
+
+
+def define_base_model_mid_fusion_3_view(learning_rate, image_size=(224, 224), fusion_technique=2, verbose_metrics=False, weighted_loss=False, weight=0.5):
+    # Fusion Techniques:
+    # 0: Max Fusion
+    # 1: Average Fusion
+    # 2: Concatenation
+    
+    # define inputs
+    input_xpl0 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl0")
+    input_xpl30 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl30")
+    input_xpl60 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl60")
+
+
+    # define xpl 0° part of the network until last conv layer
+    model_xpl0 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_xpl0)
+    model_xpl0 = MaxPooling2D((2, 2))(model_xpl0)
+    model_xpl0 = Dropout(0.2)(model_xpl0)
+
+    model_xpl0 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_xpl0)
+    model_xpl0 = MaxPooling2D((2, 2))(model_xpl0)
+    model_xpl0 = Dropout(0.2)(model_xpl0)
+
+
+    # define xpl 30° part of the network until last conv layer
+    model_xpl30 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_xpl30)
+    model_xpl30 = MaxPooling2D((2, 2))(model_xpl30)
+    model_xpl30 = Dropout(0.2)(model_xpl30)
+
+    model_xpl30 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_xpl30)
+    model_xpl30 = MaxPooling2D((2, 2))(model_xpl30)
+    model_xpl30 = Dropout(0.2)(model_xpl30)
+
+    # define xpl 60° part of the network until last conv layer
+    model_xpl60 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_xpl60)
+    model_xpl60 = MaxPooling2D((2, 2))(model_xpl60)
+    model_xpl60 = Dropout(0.2)(model_xpl60)
+
+    model_xpl60 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_xpl60)
+    model_xpl60 = MaxPooling2D((2, 2))(model_xpl60)
+    model_xpl60 = Dropout(0.2)(model_xpl60)
+
+    # merge ppl and xpl parts
+    if fusion_technique == 0:
+        model_merge = Maximum()([model_xpl0, model_xpl30, model_xpl60])
+    elif fusion_technique == 1:
+        model_merge = Average()([model_xpl0, model_xpl30, model_xpl60])
+    else:
+        model_merge = Concatenate()([model_xpl0, model_xpl30, model_xpl60])
+
+    model_merge = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer')(model_merge)
+    model_merge = MaxPooling2D((2, 2))(model_merge)
+    model_merge = Dropout(0.2)(model_merge)
+
+    model_merge = Flatten()(model_merge)
+    model_merge = Dense(128, activation='relu', kernel_initializer='he_uniform')(model_merge)
+    model_merge = Dropout(0.5)(model_merge)
+
+    output_layer = Dense(1, activation="sigmoid")(model_merge)
+
+    opt = Adam(learning_rate)
+
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
+
+    # metrics = tf.keras.metrics.CategoricalAccuracy()
+    
+    # define final model
+    model = Model(inputs=[input_xpl0, input_xpl30, input_xpl60], outputs=output_layer)
+
+    # plot model
+    # plot_model(model, to_file="my_awesome_path")
+
+    model.compile(optimizer=opt, loss=weighted_bincrossentropy, metrics=metrics)
+
+    return model
+
+
+# multi-view model with fusion at the top
+def define_base_model_early_fusion_6_view(learning_rate, image_size=(224, 224), fusion_technique=2, verbose_metrics=False, weighted_loss=False, weight=0.5):
+    # This model performs early fusion right at the top layer
+    # Fusion Techniques:
+    # 0: Max Fusion
+    # 1: Average Fusion
+    # 2: Concatenation
+
+    # define inputs
+    input_ppl0 = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl0")
+    input_ppl30 = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl30")
+    input_ppl60 = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl60")
+
+    input_xpl0 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl0")
+    input_xpl30 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl30")
+    input_xpl60 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl60")
+
+    # merge ppl and xpl parts
+    if fusion_technique == 0:
+        model_merge = Maximum()([input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60])
+    elif fusion_technique == 1:
+        model_merge = Average()([input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60])
+    else:
+        model_merge = Concatenate()([input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60])
+
+    x = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_merge)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.2)(x)
+
+    x = Flatten()(x)
+    x = Dense(128, activation='relu', kernel_initializer='he_uniform')(x)
+    x = Dropout(0.5)(x)
+
+    output_layer = Dense(1, activation="sigmoid")(x)
+
+    opt = Adam(learning_rate)
+
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
+
+    # metrics = tf.keras.metrics.CategoricalAccuracy()
+    
+    model = Model(inputs=[input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60], outputs=output_layer)
+
+    model.compile(optimizer=opt, loss=weighted_bincrossentropy, metrics=metrics)
+
+    return model
+
+
+def define_base_model_mid_fusion_6_view(learning_rate, image_size=(224, 224), fusion_technique=2, verbose_metrics=False, weighted_loss=False, weight=0.5):
+    # Fusion Techniques:
+    # 0: Max Fusion
+    # 1: Average Fusion
+    # 2: Concatenation
+    
+    # define inputs
+    input_ppl0 = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl0")
+    input_ppl30 = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl30")
+    input_ppl60 = Input(shape=(image_size[0], image_size[1], 3), name="input_ppl60")
+
+    input_xpl0 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl0")
+    input_xpl30 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl30")
+    input_xpl60 = Input(shape=(image_size[0], image_size[1], 3), name="input_xpl60")
+
+
+    # define ppl 0° part of the network until last conv layer
+    model_ppl0 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_ppl0)
+    model_ppl0 = MaxPooling2D((2, 2))(model_ppl0)
+    model_ppl0 = Dropout(0.2)(model_ppl0)
+
+    model_ppl0 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_ppl0)
+    model_ppl0 = MaxPooling2D((2, 2))(model_ppl0)
+    model_ppl0 = Dropout(0.2)(model_ppl0)
+
+
+    # define ppl 30° part of the network until last conv layer
+    model_ppl30 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_ppl30)
+    model_ppl30 = MaxPooling2D((2, 2))(model_ppl30)
+    model_ppl30 = Dropout(0.2)(model_ppl30)
+
+    model_ppl30 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_ppl30)
+    model_ppl30 = MaxPooling2D((2, 2))(model_ppl30)
+    model_ppl30 = Dropout(0.2)(model_ppl30)
+
+
+    # define ppl 60° part of the network until last conv layer
+    model_ppl60 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_ppl60)
+    model_ppl60 = MaxPooling2D((2, 2))(model_ppl60)
+    model_ppl60 = Dropout(0.2)(model_ppl60)
+
+    model_ppl60 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_ppl60)
+    model_ppl60 = MaxPooling2D((2, 2))(model_ppl60)
+    model_ppl60 = Dropout(0.2)(model_ppl60)
+
+
+    # define xpl 0° part of the network until last conv layer
+    model_xpl0 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_xpl0)
+    model_xpl0 = MaxPooling2D((2, 2))(model_xpl0)
+    model_xpl0 = Dropout(0.2)(model_xpl0)
+
+    model_xpl0 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_xpl0)
+    model_xpl0 = MaxPooling2D((2, 2))(model_xpl0)
+    model_xpl0 = Dropout(0.2)(model_xpl0)
+
+
+    # define xpl 30° part of the network until last conv layer
+    model_xpl30 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_xpl30)
+    model_xpl30 = MaxPooling2D((2, 2))(model_xpl30)
+    model_xpl30 = Dropout(0.2)(model_xpl30)
+
+    model_xpl30 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_xpl30)
+    model_xpl30 = MaxPooling2D((2, 2))(model_xpl30)
+    model_xpl30 = Dropout(0.2)(model_xpl30)
+
+    # define xpl 60° part of the network until last conv layer
+    model_xpl60 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(input_xpl60)
+    model_xpl60 = MaxPooling2D((2, 2))(model_xpl60)
+    model_xpl60 = Dropout(0.2)(model_xpl60)
+
+    model_xpl60 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same')(model_xpl60)
+    model_xpl60 = MaxPooling2D((2, 2))(model_xpl60)
+    model_xpl60 = Dropout(0.2)(model_xpl60)
+
+    # merge ppl and xpl parts
+    if fusion_technique == 0:
+        model_merge = Maximum()([model_ppl0, model_ppl30, model_ppl60, model_xpl0, model_xpl30, model_xpl60])
+    elif fusion_technique == 1:
+        model_merge = Average()([model_ppl0, model_ppl30, model_ppl60, model_xpl0, model_xpl30, model_xpl60])
+    else:
+        model_merge = Concatenate()([model_ppl0, model_ppl30, model_ppl60, model_xpl0, model_xpl30, model_xpl60])
+
+    model_merge = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer')(model_merge)
+    model_merge = MaxPooling2D((2, 2))(model_merge)
+    model_merge = Dropout(0.2)(model_merge)
+
+    model_merge = Flatten()(model_merge)
+    model_merge = Dense(128, activation='relu', kernel_initializer='he_uniform')(model_merge)
+    model_merge = Dropout(0.5)(model_merge)
+
+    output_layer = Dense(1, activation="sigmoid")(model_merge)
+
+    opt = Adam(learning_rate)
+
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
+
+    # metrics = tf.keras.metrics.CategoricalAccuracy()
+    
+    # define final model
+    model = Model(inputs=[input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60], outputs=output_layer)
+
+    # plot model
+    # plot_model(model, to_file="my_awesome_path")
+
+    model.compile(optimizer=opt, loss=weighted_bincrossentropy, metrics=metrics)
+
+    return model
+
+
+# define basic cnn model
+def define_base_model_legacy(learning_rate, image_size=(224, 224), verbose_metrics=False, weighted_loss=False, weight=0.5):
+    input_shape=(image_size[0], image_size[1], 3)
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_shape))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Dropout(0.2))
+    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Dropout(0.2))
+    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', name='last_conv_layer'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Dropout(0.2))
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
+    model.add(Dropout(0.5))
+    if weighted_loss:
+        model.add(Dense(1))
+        loss = weighted_loss(weight=weight)
+    else:
+        model.add(Dense(1, activation='sigmoid'))
+    
+    # compile model
+    # opt = SGD(lr=0.001, momentum=0.9)
+    opt = Adam(learning_rate)
+
+    # add regularization to current model
+    # model = add_regularization(model)
+
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
     model.compile(optimizer=opt, loss='binary_crossentropy', metrics=metrics)
     # print(model.summary())
     return model
@@ -227,7 +639,7 @@ def define_vgg_model_simple(learning_rate, image_size=(224, 224), verbose_metric
     return base_model
 
 
-def create_dummy_model(learning_rate=0.01, input_shape=(224,224,3), verbose_metrics=False, regularization=False, n_classes=1, fine_tune=0):
+def create_dummy_model(learning_rate=0.01, input_shape=(224,224,3), verbose_metrics=False, regularization=False, n_classes=1, fine_tune=8):
     """
     This is a Functional API version of the Sequential VGG model above
     Compiles a model integrated with VGG16 pretrained layers
@@ -248,6 +660,12 @@ def create_dummy_model(learning_rate=0.01, input_shape=(224,224,3), verbose_metr
     # Defines how many layers to freeze during training.
     # Layers in the convolutional base are switched from trainable to non-trainable
     # depending on the size of the fine-tuning parameter.
+    # let fine_tune be <=18
+    # train last block: fine_tune=4
+    # train last 2 blocks: fine_tune=8
+    # train last 3 blocks: fine_tune=12
+    # train all except first: fine_tune=15
+    # train all blocks: fine_tune=18
     if fine_tune > 0:
         for layer in conv_base.layers[:-fine_tune]:
             layer.trainable = False

@@ -2,7 +2,7 @@ import os
 import numpy as np
 from skimage.transform import resize
 from sklearn.metrics import jaccard_score
-from ml_base.grad_CAM import cam_pipeline 
+from ml_base import grad_CAM
 from utils.img import get_json_img_name, draw_json_polygons
 from utils.utils import get_val_test_data
 import tensorflow as tf
@@ -39,7 +39,7 @@ def calc_iou_score(y_true, y_pred):
 #     return mean_iou
 
 
-def calc_mean_segmentation_scores(class_1_img_folder, class_0_img_folder, image_size, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path, xlsx_input_split_file):
+def calc_mean_segmentation_scores_single_input(class_0_img_folder, class_1_img_folder, image_size, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path, xlsx_input_split_file):
     print("Calculating segmentation scores...")
     valset, testset = get_val_test_data(xlsx_input_split_file)
     predicted_binary_added_heatmaps = np.zeros([0])
@@ -56,7 +56,7 @@ def calc_mean_segmentation_scores(class_1_img_folder, class_0_img_folder, image_
         img_name = get_json_img_name(json_file_name)
         image_id = "_".join(img_name.split('_')[:3])
         segmented_img = draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, image_size)
-        pred_heatmap = cam_pipeline(class_1_img_folder, img_name, image_size, model, last_conv_layer_name, cam_img_output_path=cam_img_output_path, segmented_img=segmented_img)
+        pred_heatmap = grad_CAM.cam_pipeline(class_1_img_folder, img_name, image_size, model, last_conv_layer_name, cam_img_output_path=cam_img_output_path, segmented_img=segmented_img)
         predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
         heatmap_size = predicted_binary_heatmap.shape
         
@@ -82,7 +82,7 @@ def calc_mean_segmentation_scores(class_1_img_folder, class_0_img_folder, image_
         # check if file is in val/test set
         for id in [*valset, *testset]:
             if id in file:
-                pred_heatmap = cam_pipeline(class_0_img_folder, file, image_size, model, last_conv_layer_name, draw_text=False)
+                pred_heatmap = grad_CAM.cam_pipeline(class_0_img_folder, file, image_size, model, last_conv_layer_name, draw_text=False)
                 predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
                 # create empty ground truth heatmap, since it is expected to not detect any olivine in non-olivine images
                 ground_truth_heatmap = np.zeros(predicted_binary_heatmap.shape) 
@@ -110,8 +110,21 @@ METRICS = [
 
 
 
-def calc_mean_iou_scores_early_fusion(class_1_img_folder_ppl, class_1_img_folder_xpl, class_0_img_folder_ppl, class_0_img_folder_xpl, image_size, model, polygon_label_folder, voc_label_folder, last_conv_layer_name, iou_threshold, cam_img_output_path, xlsx_input_split_file):
+def calc_mean_segmentation_scores_dual_input(class_0_img_folder_ppl, 
+                                             class_0_img_folder_xpl,
+                                             class_1_img_folder_ppl,
+                                             class_1_img_folder_xpl, 
+                                             image_size, 
+                                             model, 
+                                             polygon_label_folder, 
+                                             voc_label_folder, 
+                                             last_conv_layer_name, 
+                                             iou_threshold, 
+                                             cam_img_output_path, 
+                                             xlsx_input_split_file):
     print("Calculating IoU score...")
+    base_img_folders_class_0 = [class_0_img_folder_ppl, class_0_img_folder_xpl]
+    base_img_folders_class_1 = [class_1_img_folder_ppl, class_1_img_folder_xpl]
     valset, testset = get_val_test_data(xlsx_input_split_file)
     predicted_binary_added_heatmaps = np.zeros([0])
     ground_truth_added_heatmaps = np.zeros([0])
@@ -120,8 +133,8 @@ def calc_mean_iou_scores_early_fusion(class_1_img_folder_ppl, class_1_img_folder
     for json_file_name in os.listdir(polygon_label_folder):
         img_name = get_json_img_name(json_file_name)
         image_id = "_".join(img_name.split('_')[:3])
-        segmented_img = draw_json_polygons(img_name, json_file_name, class_1_img_folder, polygon_label_folder, image_size)
-        pred_heatmap = cam_pipeline(class_1_img_folder, img_name, image_size, model, last_conv_layer_name, cam_img_output_path=cam_img_output_path, segmented_img=segmented_img)
+        segmented_img = draw_json_polygons(img_name, json_file_name, class_1_img_folder_xpl, polygon_label_folder, image_size)
+        pred_heatmap = grad_CAM.cam_pipeline_2_view(base_img_folders_class_1, img_name, image_size, model, last_conv_layer_name, cam_img_output_path=cam_img_output_path, segmented_img=segmented_img)
         predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
         heatmap_size = predicted_binary_heatmap.shape
         
@@ -137,13 +150,15 @@ def calc_mean_iou_scores_early_fusion(class_1_img_folder_ppl, class_1_img_folder
                 # add all ground truth segmentations to one large 1D vector
                 ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
 
+    # calculate IoU score for olivine images only
+    olivine_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
     # predict heatmaps for non-olivine images in validation and test set and add to existing heatmaps
-    for file in os.listdir(class_0_img_folder):
+    for file in os.listdir(class_0_img_folder_xpl):
         # check if file is in val/test set
         for id in [*valset, *testset]:
             if id in file:
-                pred_heatmap = cam_pipeline(class_0_img_folder, file, image_size, model, last_conv_layer_name, draw_text=False)
+                pred_heatmap = grad_CAM.cam_pipeline_2_view(base_img_folders_class_0, file, image_size, model, last_conv_layer_name, draw_text=False)
                 predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
                 ground_truth_heatmap = np.zeros(predicted_binary_heatmap.shape)
                 predicted_binary_added_heatmaps = np.concatenate((predicted_binary_added_heatmaps, predicted_binary_heatmap.flatten()), axis=None)
@@ -151,6 +166,112 @@ def calc_mean_iou_scores_early_fusion(class_1_img_folder_ppl, class_1_img_folder
 
 
     # calculating the iou value over all images combined 
-    mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
+    global_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
-    return mean_iou
+    return [global_mean_iou, olivine_mean_iou]
+
+
+
+def calc_mean_segmentation_scores_multi_input(class_0_img_folder_ppl_0,
+                                              class_0_img_folder_ppl_30,
+                                              class_0_img_folder_ppl_60,
+                                              class_0_img_folder_ppl_merged,
+                                              class_0_img_folder_xpl_0,
+                                              class_0_img_folder_xpl_30,
+                                              class_0_img_folder_xpl_60,
+                                              class_0_img_folder_xpl_merged,
+                                              class_1_img_folder_ppl_0,
+                                              class_1_img_folder_ppl_30,
+                                              class_1_img_folder_ppl_60,
+                                              class_1_img_folder_ppl_merged,
+                                              class_1_img_folder_xpl_0,
+                                              class_1_img_folder_xpl_30,
+                                              class_1_img_folder_xpl_60,
+                                              class_1_img_folder_xpl_merged,
+                                              input_size,
+                                              image_size, 
+                                              model, 
+                                              polygon_label_folder, 
+                                              voc_label_folder, 
+                                              last_conv_layer_name, 
+                                              iou_threshold, 
+                                              cam_img_output_path, 
+                                              xlsx_input_split_file):
+    print("Calculating IoU score...")
+    base_img_folders_class_0 = [class_0_img_folder_ppl_0, 
+                                class_0_img_folder_ppl_30, 
+                                class_0_img_folder_ppl_60,
+                                class_0_img_folder_ppl_merged,
+                                class_0_img_folder_xpl_0,
+                                class_0_img_folder_xpl_30,
+                                class_0_img_folder_xpl_60,
+                                class_0_img_folder_xpl_merged,
+                               ]
+    base_img_folders_class_1 = [class_1_img_folder_ppl_0, 
+                                class_1_img_folder_ppl_30, 
+                                class_1_img_folder_ppl_60,
+                                class_1_img_folder_ppl_merged,
+                                class_1_img_folder_xpl_0,
+                                class_1_img_folder_xpl_30,
+                                class_1_img_folder_xpl_60,
+                                class_1_img_folder_xpl_merged,
+                               ]
+    valset, testset = get_val_test_data(xlsx_input_split_file)
+    predicted_binary_added_heatmaps = np.zeros([0])
+    ground_truth_added_heatmaps = np.zeros([0])
+
+    # predict heatmaps for olivine images
+    for json_file_name in os.listdir(polygon_label_folder):
+        img_name = get_json_img_name(json_file_name)
+        image_id = "_".join(img_name.split('_')[:3])
+        segmented_img = draw_json_polygons(img_name, json_file_name, class_1_img_folder_xpl_merged, polygon_label_folder, image_size)
+
+        pred_heatmap = grad_CAM.cam_pipeline_multi_input(base_img_folders_class_1,
+                                                         img_name,
+                                                         image_size,
+                                                         input_size,
+                                                         model,
+                                                         last_conv_layer_name,
+                                                         cam_img_output_path=cam_img_output_path,
+                                                         segmented_img=segmented_img)
+
+        predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
+        heatmap_size = predicted_binary_heatmap.shape
+        
+        #add all predicted segmentations to one large vector
+        predicted_binary_added_heatmaps = np.concatenate((predicted_binary_added_heatmaps, predicted_binary_heatmap.flatten()), axis=None)
+
+        # search for corresponding labeled .npy file:
+        for img_file in os.listdir(voc_label_folder):
+            if image_id in img_file:
+                ground_truth_heatmap = np.load(os.path.join(voc_label_folder, img_file))
+                ground_truth_heatmap = resize(ground_truth_heatmap, heatmap_size)
+
+                # add all ground truth segmentations to one large 1D vector
+                ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
+
+    # calculate IoU score for olivine images only
+    olivine_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
+
+    # predict heatmaps for non-olivine images in validation and test set and add to existing heatmaps
+    for img_name in os.listdir(class_0_img_folder_xpl_merged):
+        # check if file is in val/test set
+        for id in [*valset, *testset]:
+            if id in img_name:
+                pred_heatmap = grad_CAM.cam_pipeline_multi_input(base_img_folders_class_0,
+                                                                 img_name,
+                                                                 image_size,
+                                                                 input_size,
+                                                                 model,
+                                                                 last_conv_layer_name,
+                                                                 draw_text=False)
+                predicted_binary_heatmap = np.where(pred_heatmap > iou_threshold, 1, 0)
+                ground_truth_heatmap = np.zeros(predicted_binary_heatmap.shape)
+                predicted_binary_added_heatmaps = np.concatenate((predicted_binary_added_heatmaps, predicted_binary_heatmap.flatten()), axis=None)
+                ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
+
+
+    # calculating the iou value over all images combined 
+    global_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
+
+    return [global_mean_iou, olivine_mean_iou]

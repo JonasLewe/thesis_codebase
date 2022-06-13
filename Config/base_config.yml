@@ -1,15 +1,29 @@
 # Project config file
 global:
     img_size: 224
-    max_seed_value: 20
+    max_seed_value: 1
 
 # Define dataset specific parameters
 olivine:
     input_data: "Data/Input_Data/processed_img_data/generator_input_data/thin_section_dataset"
     input_data_undersampled: "Data/Input_Data/processed_img_data/generator_input_data/undersampled_thin_section_dataset"
     input_data_small: "Data/Input_Data/processed_img_data/generator_input_data/small_dataset" 
-    class_1_img_folder: "Data/Input_Data/processed_img_data/Olivine_Images"
-    class_0_img_folder: "Data/Input_Data/processed_img_data/Non_Olivine_Images"
+    class_0_img_folder_ppl_merged: "Data/Input_Data/processed_img_data/Non_Olivine_Images_PPL_merged"
+    class_0_img_folder_ppl_0: "Data/Input_Data/processed_img_data/Non_Olivine_Images_PPL_0"
+    class_0_img_folder_ppl_30: "Data/Input_Data/processed_img_data/Non_Olivine_Images_PPL_30"
+    class_0_img_folder_ppl_60: "Data/Input_Data/processed_img_data/Non_Olivine_Images_PPL_60"
+    class_0_img_folder_xpl_merged: "Data/Input_Data/processed_img_data/Non_Olivine_Images_XPL_merged"
+    class_0_img_folder_xpl_0: "Data/Input_Data/processed_img_data/Non_Olivine_Images_XPL_0"
+    class_0_img_folder_xpl_30: "Data/Input_Data/processed_img_data/Non_Olivine_Images_XPL_30"
+    class_0_img_folder_xpl_60: "Data/Input_Data/processed_img_data/Non_Olivine_Images_XPL_60"
+    class_1_img_folder_ppl_merged: "Data/Input_Data/processed_img_data/Olivine_Images_PPL_merged"
+    class_1_img_folder_ppl_0: "Data/Input_Data/processed_img_data/Olivine_Images_PPL_0"
+    class_1_img_folder_ppl_30: "Data/Input_Data/processed_img_data/Olivine_Images_PPL_30"
+    class_1_img_folder_ppl_60: "Data/Input_Data/processed_img_data/Olivine_Images_PPL_60"
+    class_1_img_folder_xpl_merged: "Data/Input_Data/processed_img_data/Olivine_Images_XPL_merged"
+    class_1_img_folder_xpl_0: "Data/Input_Data/processed_img_data/Olivine_Images_XPL_0"
+    class_1_img_folder_xpl_30: "Data/Input_Data/processed_img_data/Olivine_Images_XPL_30"
+    class_1_img_folder_xpl_60: "Data/Input_Data/processed_img_data/Olivine_Images_XPL_60"
     polygon_label_folder: "Data/Labels/olivine/polygon_label_files"
     voc_label_folder: "Data/Labels/olivine/voc_data/SegmentationClass"
 cats_vs_dogs:
