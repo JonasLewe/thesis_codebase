@@ -51,6 +51,8 @@ def calc_mean_segmentation_scores_single_input(class_0_img_folder, class_1_img_f
     predicted_binary_added_heatmaps_non_olivine = np.zeros([0])
     ground_truth_added_heatmaps_non_olivine = np.zeros([0])
 
+    olivine_iou_list = []
+
     # predict heatmaps for olivine images
     for json_file_name in os.listdir(polygon_label_folder):
         img_name = get_json_img_name(json_file_name)
@@ -71,7 +73,10 @@ def calc_mean_segmentation_scores_single_input(class_0_img_folder, class_1_img_f
 
                 # add all ground truth segmentations to one large 1D vector
                 ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
-    
+        olivine_iou = calc_iou_score(ground_truth_heatmap, pred_heatmap)
+        olivine_iou_list.append(olivine_iou)
+
+
     # calculate IoU score for olivine images only
     olivine_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
     # olivine_mean_dice = jaccard_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
@@ -94,7 +99,10 @@ def calc_mean_segmentation_scores_single_input(class_0_img_folder, class_1_img_f
     global_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
     # global_mean_dice = jaccard_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
-    return [global_mean_iou, olivine_mean_iou]
+    max_olivine_iou = np.max(olivine_iou_list)
+    min_olivine_iou = np.min(olivine_iou_list)
+
+    return [global_mean_iou, olivine_mean_iou, max_olivine_iou, min_olivine_iou]
 
 
 METRICS = [

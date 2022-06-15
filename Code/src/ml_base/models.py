@@ -3,12 +3,12 @@ import tempfile
 from email.mime import base
 from ml_base.metrics import METRICS
 import tensorflow as tf
-from tensorflow.keras import Input
+from tensorflow.keras import Input, layers
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.applications import VGG16, ResNet50
 from tensorflow.keras.layers.experimental.preprocessing import Rescaling # not available in tensorflow=2.1
-from tensorflow.keras.layers import Dropout, Conv2D, MaxPooling2D, Dense, Flatten, Concatenate, Maximum, Average
+from tensorflow.keras.layers import Dropout, Conv2D, MaxPooling2D, Dense, Flatten, Concatenate, Maximum, Average, Add, GlobalAveragePooling2D, UpSampling2D
 from tensorflow.keras.utils import plot_model
 
 
@@ -55,7 +55,7 @@ def weighted_bincrossentropy(true, pred, weights={0: 1, 1: 3.02}):
         will be penalize 10 times as much as false negatives.
     """
     weight_zero = 1   #weights[0]
-    weight_one = 3.02 #weights[1]
+    weight_one = 1 #3.02 #weights[1]
 
     # calculate the binary cross entropy
     bin_crossentropy = tf.keras.backend.binary_crossentropy(true, pred)
@@ -127,6 +127,8 @@ def define_base_model_early_fusion_2_view(learning_rate, image_size=(224, 224), 
         model_merge = Maximum()([input_ppl, input_xpl])
     elif fusion_technique == 1:
         model_merge = Average()([input_ppl, input_xpl])
+    elif fusion_technique == 2:
+        model_merge = Add()([input_ppl, input_xpl])
     else:
         model_merge = Concatenate()([input_ppl, input_xpl])
 
@@ -199,6 +201,8 @@ def define_base_model_mid_fusion_2_view(learning_rate, image_size=(224, 224), fu
         model_merge = Maximum()([model_ppl, model_xpl])
     elif fusion_technique == 1:
         model_merge = Average()([model_ppl, model_xpl])
+    elif fusion_technique == 2:
+        model_merge = Add()([model_ppl, model_xpl])
     else:
         model_merge = Concatenate()([model_ppl, model_xpl])
 
@@ -252,6 +256,8 @@ def define_base_model_early_fusion_3_view(learning_rate, image_size=(224, 224), 
         model_merge = Maximum()([input_xpl0, input_xpl30, input_xpl60])
     elif fusion_technique == 1:
         model_merge = Average()([input_xpl0, input_xpl30, input_xpl60])
+    elif fusion_technique == 2:
+        model_merge = Add()([input_xpl0, input_xpl30, input_xpl60])
     else:
         model_merge = Concatenate()([input_xpl0, input_xpl30, input_xpl60])
 
@@ -334,6 +340,8 @@ def define_base_model_mid_fusion_3_view(learning_rate, image_size=(224, 224), fu
         model_merge = Maximum()([model_xpl0, model_xpl30, model_xpl60])
     elif fusion_technique == 1:
         model_merge = Average()([model_xpl0, model_xpl30, model_xpl60])
+    elif fusion_technique == 2:
+        model_merge = Add()([model_xpl0, model_xpl30, model_xpl60])
     else:
         model_merge = Concatenate()([model_xpl0, model_xpl30, model_xpl60])
 
@@ -389,6 +397,8 @@ def define_base_model_early_fusion_6_view(learning_rate, image_size=(224, 224), 
         model_merge = Maximum()([input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60])
     elif fusion_technique == 1:
         model_merge = Average()([input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60])
+    elif fusion_technique == 2:
+        model_merge = Add()([input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60])
     else:
         model_merge = Concatenate()([input_ppl0, input_ppl30, input_ppl60, input_xpl0, input_xpl30, input_xpl60])
 
@@ -505,6 +515,8 @@ def define_base_model_mid_fusion_6_view(learning_rate, image_size=(224, 224), fu
         model_merge = Maximum()([model_ppl0, model_ppl30, model_ppl60, model_xpl0, model_xpl30, model_xpl60])
     elif fusion_technique == 1:
         model_merge = Average()([model_ppl0, model_ppl30, model_ppl60, model_xpl0, model_xpl30, model_xpl60])
+    elif fusion_technique == 2:
+        model_merge = Add()([model_ppl0, model_ppl30, model_ppl60, model_xpl0, model_xpl30, model_xpl60])
     else:
         model_merge = Concatenate()([model_ppl0, model_ppl30, model_ppl60, model_xpl0, model_xpl30, model_xpl60])
 
@@ -639,7 +651,7 @@ def define_vgg_model_simple(learning_rate, image_size=(224, 224), verbose_metric
     return base_model
 
 
-def create_dummy_model(learning_rate=0.01, input_shape=(224,224,3), verbose_metrics=False, regularization=False, n_classes=1, fine_tune=8):
+def define_vgg_model_functional(learning_rate=0.01, input_shape=(224,224,3), verbose_metrics=False, regularization=False, n_classes=1, fine_tune=0):
     """
     This is a Functional API version of the Sequential VGG model above
     Compiles a model integrated with VGG16 pretrained layers
@@ -702,4 +714,166 @@ def create_dummy_model(learning_rate=0.01, input_shape=(224,224,3), verbose_metr
                   loss='binary_crossentropy',
                   metrics=metrics)
     
+    return model
+
+
+def define_resnet50_model(learning_rate=0.01, input_shape=(224,224,3), verbose_metrics=False, regularization=False):
+    # last_conv_layer = "conv5_block3_3_conv"
+    resnet_base = ResNet50(include_top=False, weights='imagenet', input_shape=input_shape)
+
+    for layer in resnet_base.layers:
+        layer.trainable = True
+
+    #input_layer = Input(shape=input_shape, name="input_layer")
+
+    x = resnet_base.output
+    x = GlobalAveragePooling2D()(x)
+    output_layer = Dense(1, activation="sigmoid")(x)
+
+    model = Model(resnet_base.input, output_layer)
+
+    optimizer = Adam(learning_rate=learning_rate)
+
+    # determine metrics used
+    if verbose_metrics:
+        metrics = METRICS
+    else:
+        metrics = ['accuracy']
+
+    model.compile(optimizer=optimizer, 
+                  loss='binary_crossentropy',
+                  metrics=metrics)
+
+    return model
+
+
+# defining U-Net
+
+
+def double_conv_block(x, n_filters):
+    # Conv2D then ReLU activation
+    x = layers.Conv2D(n_filters, 3, padding = "same", activation = "relu", kernel_initializer = "he_normal")(x)
+    # Conv2D then ReLU activation
+    x = layers.Conv2D(n_filters, 3, padding = "same", activation = "relu", kernel_initializer = "he_normal")(x)
+    return x
+
+def downsample_block(x, n_filters):
+    f = double_conv_block(x, n_filters)
+    p = layers.MaxPool2D(2)(f)
+    p = layers.Dropout(0.3)(p)
+    return f, p
+
+
+def upsample_block(x, conv_features, n_filters):
+    # upsample
+    x = layers.Conv2DTranspose(n_filters, 3, 2, padding="same")(x)
+    # concatenate
+    x = layers.concatenate([x, conv_features])
+    # dropout
+    x = layers.Dropout(0.3)(x)
+    # Conv2D twice with ReLU activation
+    x = double_conv_block(x, n_filters)
+    return x
+
+
+def define_unet_model(input_shape=(224,224,3)):
+    inputs = layers.Input(shape=input_shape)
+
+    # encoder: contracting path - downsample
+    # 1 - downsample
+    f1, p1 = downsample_block(inputs, 64)
+
+    # 2 - downsample
+    f2, p2 = downsample_block(p1, 128)
+
+    # 3 - downsample
+    f3, p3 = downsample_block(p2, 256)
+
+    # 4 - downsample
+    f4, p4 = downsample_block(p3, 512)
+
+    # 5 - bottleneck
+    bottleneck = double_conv_block(p4, 1024)
+
+    # decoder: expanding path - upsample
+    # 6 - upsample
+    u6 = upsample_block(bottleneck, f4, 512)
+
+    # 7 - upsample
+    u7 = upsample_block(u6, f3, 256)
+
+    # 8 - upsample
+    u8 = upsample_block(u7, f2, 128)
+
+    # 9 - upsample
+    u9 = upsample_block(u8, f1, 64)
+
+    # outputs
+    outputs = layers.Conv2D(3, 1, padding="same", activation = "softmax", name="last_conv_layer")(u9)
+
+    # unet model with Keras Functional API
+    unet_model = tf.keras.Model(inputs, outputs, name="U-Net")
+
+    unet_model.compile(optimizer=tf.keras.optimizers.Adam(),
+                  loss="sparse_categorical_crossentropy",
+                  metrics="accuracy")
+
+    return unet_model
+
+
+def unet(input_size=(224,224,1), pretrained_weights=None):
+    
+    inputs = layers.Input(input_size)
+    conv1 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
+    conv1 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
+    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+    conv2 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
+    conv2 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
+    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+    conv3 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
+    conv3 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
+    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+    conv4 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
+    conv4 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
+    drop4 = Dropout(0.5)(conv4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
+
+    conv5 = layers.Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool4)
+    conv5 = layers.Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv5)
+    drop5 = Dropout(0.5)(conv5)
+
+    up6 = layers.Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(drop5))
+    merge6 = layers.concatenate([drop4,up6], axis = 3)
+    conv6 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge6)
+    conv6 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
+
+    up7 = layers.Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv6))
+    merge7 = layers.concatenate([conv3,up7], axis = 3)
+    conv7 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge7)
+    conv7 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv7)
+
+    up8 = layers.Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv7))
+    merge8 = layers.concatenate([conv2,up8], axis = 3)
+    conv8 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge8)
+    conv8 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv8)
+
+    up9 = layers.Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv8))
+    merge9 = layers.concatenate([conv1,up9], axis = 3)
+    conv9 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
+    conv9 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
+    conv9 = layers.Conv2D(2, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
+    conv10 = layers.Conv2D(1, 1, activation = 'sigmoid')(conv9)
+
+    x = GlobalAveragePooling2D()(conv10)
+    output_layer = Dense(1, activation="sigmoid")(x)
+
+    model = Model(inputs, output_layer)
+
+    model.compile(optimizer = Adam(lr = 1e-4), loss = 'binary_crossentropy', metrics = ['accuracy'])
+
+    #model.summary()
+
+    if(pretrained_weights):
+        model.load_weights(pretrained_weights)
+
     return model

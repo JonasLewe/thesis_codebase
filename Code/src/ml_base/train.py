@@ -34,8 +34,15 @@ def train_model_single_view(img_root_dir,
 
     elif model_name == 'vgg':
         # model = define_vgg_model(verbose_metrics=verbose_metrics, image_size=image_size, learning_rate=learning_rate)
-        model = models.create_dummy_model(learning_rate=learning_rate, verbose_metrics=verbose_metrics, regularization=regularization)
+        model = models.define_vgg_model_functional(learning_rate=learning_rate, verbose_metrics=verbose_metrics, regularization=regularization)
     
+    elif model_name == 'resnet50':
+        model = models.define_resnet50_model(learning_rate=learning_rate, verbose_metrics=verbose_metrics, regularization=regularization)
+    
+    elif model_name == 'unet':
+        #model = models.define_unet_model()
+        model = models.unet()
+
     # create data generators
     train_datagen = ImageDataGenerator(# preprocessing_function=hist_eq,
                                         rescale=1.0/255.0,

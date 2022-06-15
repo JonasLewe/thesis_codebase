@@ -1,7 +1,8 @@
 # Project config file
 global:
     img_size: 224
-    max_seed_value: 1
+    max_seed_value: 18
+    single_run: 1 # check if you only want to train on one specific seed value
 
 # Define dataset specific parameters
 olivine:
@@ -28,8 +29,22 @@ olivine:
     voc_label_folder: "Data/Labels/olivine/voc_data/SegmentationClass"
 cats_vs_dogs:
     input_data: "Data/Input_Data/other_datasets/cats_vs_dogs"
-    class_1_img_folder: ""
-    class_0_img_folder: ""
+    class_0_img_folder_ppl_merged: ""
+    class_0_img_folder_ppl_0: ""
+    class_0_img_folder_ppl_30: ""
+    class_0_img_folder_ppl_60: ""
+    class_0_img_folder_xpl_merged: ""
+    class_0_img_folder_xpl_0: ""
+    class_0_img_folder_xpl_30: ""
+    class_0_img_folder_xpl_60: ""
+    class_1_img_folder_ppl_merged: ""
+    class_1_img_folder_ppl_0: ""
+    class_1_img_folder_ppl_30: ""
+    class_1_img_folder_ppl_60: ""
+    class_1_img_folder_xpl_merged: ""
+    class_1_img_folder_xpl_0: ""
+    class_1_img_folder_xpl_30: ""
+    class_1_img_folder_xpl_60: ""
     polygon_label_folder: ""
     voc_label_folder: ""
 
@@ -38,7 +53,11 @@ base:
     last_conv_layer_name: "last_conv_layer"
 vgg:
     last_conv_layer_name: "block5_conv3"
+resnet50:
+    last_conv_layer_name: "conv5_block3_3_conv"
+unet:
+    last_conv_layer_name: "last_conv_layer"
 
 # Define xlsx file path
-xlsx_results_filepath: "training_results.xlsx"
+xlsx_results_filepath: "training_results_final.xlsx"
 xlsx_input_split_filepath: "train_val_test_split.xlsx"

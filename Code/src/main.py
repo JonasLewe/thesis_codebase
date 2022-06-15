@@ -81,6 +81,7 @@ voc_label_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["v
 last_conv_layer_name = base_config[user_config["model_type"]]["last_conv_layer_name"]
 image_size = (base_config["global"]["img_size"], base_config["global"]["img_size"])
 max_seed_value = base_config["global"]["max_seed_value"]
+single_run = base_config["global"]["single_run"]
 xlsx_results_filename = base_config["xlsx_results_filepath"]
 xlsx_input_split_filename = base_config["xlsx_input_split_filepath"]
 
@@ -153,7 +154,11 @@ if __name__=="__main__":
     shutil.copy(os.path.join(ROOT_DIR, CONFIG, args.config), os.path.join(RUN_DIR, "settings.yml"))
     xlsx_summary = []
 
-    for seed_value in range(1, max_seed_value+1): 
+    start_seed = 1
+    if single_run:
+        start_seed = max_seed_value
+
+    for seed_value in range(start_seed, max_seed_value+1):
         start = timer()
         print(53*"#")
         print(f"Run {seed_value}/{max_seed_value}:")
@@ -175,7 +180,7 @@ if __name__=="__main__":
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0),
                 tf.keras.callbacks.EarlyStopping(monitor="val_loss",
                                                  min_delta=0,
-                                                 patience=40,
+                                                 patience=45,
                                                  verbose=1,
                                                  mode="min",
                                                  baseline=None,
@@ -185,7 +190,7 @@ if __name__=="__main__":
             ]
 
             # if model is a single-view model
-            if input_size == 0:
+            if input_size == 1:
                 model, history = train.train_model_single_view(root_image_folder,
                                                 image_size,
                                                 callbacks=callbacks,
@@ -279,7 +284,15 @@ if __name__=="__main__":
                                                                 )
 
                 mean_iou_score = segmentation_scores[0]
-                xlsx_summary.append((round(mean_iou_score, 4), seed_value, scores)) 
+                mean_iou_olivine_score = segmentation_scores[1]
+                max_iou_olivine_score = segmentation_scores[2]
+                min_iou_olivine_score = segmentation_scores[3]
+                xlsx_summary.append((round(mean_iou_score, 4),
+                                     round(mean_iou_olivine_score, 4),
+                                     round(max_iou_olivine_score, 4),
+                                     round(min_iou_olivine_score, 4),
+                                     seed_value,
+                                     scores))
                 # logging.log_data(model, history, accuracy, mean_iou_score)
                 logging.save_best_model(model, segmentation_scores, seed_value, RUN_DIR)
 
@@ -296,15 +309,19 @@ if __name__=="__main__":
     # check if dataset supports segmentation 
     if (class_1_img_folder_xpl_merged != ""):
         # get results from best round
-        max_iou_score = max(xlsx_summary, key=itemgetter(0))[0]
-        max_iou_seed = max(xlsx_summary, key=itemgetter(0))[1]
-        max_iou_precision = max(xlsx_summary, key=itemgetter(0))[2][0]
-        max_iou_recall = max(xlsx_summary, key=itemgetter(0))[2][1]
-        max_iou_fscore = max(xlsx_summary, key=itemgetter(0))[2][2]
+        mean_iou_score = max(xlsx_summary, key=itemgetter(0))[0]
+        mean_iou_olivine = max(xlsx_summary, key=itemgetter(0))[1]
+        max_iou_olivine = max(xlsx_summary, key=itemgetter(0))[2]
+        min_iou_olivine = max(xlsx_summary, key=itemgetter(0))[3]
+        max_iou_seed = max(xlsx_summary, key=itemgetter(0))[4]
+        max_iou_precision = max(xlsx_summary, key=itemgetter(0))[5][0]
+        max_iou_recall = max(xlsx_summary, key=itemgetter(0))[5][1]
+        max_iou_fscore = max(xlsx_summary, key=itemgetter(0))[5][2]
 
         # save results of best run to xlsx file
         xlsx.parse_model_output_to_xlsx(run_dir_name, 
-                                        user_config["model_type"], 
+                                        user_config["model_type"],
+                                        input_size, 
                                         epochs, 
                                         learning_rate, 
                                         batch_size, 
@@ -313,7 +330,10 @@ if __name__=="__main__":
                                         regularization,
                                         max_iou_seed,
                                         max_seed_value,
-                                        max_iou_score,
+                                        mean_iou_score,
+                                        mean_iou_olivine,
+                                        max_iou_olivine,
+                                        min_iou_olivine,
                                         max_iou_precision,
                                         max_iou_recall,
                                         max_iou_fscore,
