@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 from utils import joined_generator
 from matplotlib import pyplot as plt
@@ -225,3 +226,45 @@ def evaluate_model_multi_view(img_root_dir, image_size, model, history, log_dir=
     return acc, scores
 
 
+
+
+def evaluate_model_multi_view_cats_vs_dogs(img_root_dir, image_size, model, history, log_dir="", verbose_metrics=False, input_size=6):
+    cats_vs_dogs_root = img_root_dir
+    cats_vs_dogs_flipped = f"{img_root_dir}_flipped"
+    
+    test_datagen = ImageDataGenerator(rescale=1.0/255.0)
+
+    cats_vs_dogs_test_generator = test_datagen.flow_from_directory(os.path.join(cats_vs_dogs_root, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)
+
+    cats_vs_dogs_flipped_test_generator = test_datagen.flow_from_directory(os.path.join(cats_vs_dogs_flipped, 'test'),
+                                                class_mode='binary',
+                                                color_mode='rgb',
+                                                target_size=image_size,
+                                                batch_size=1,
+                                                shuffle=False,)                                            
+
+    if input_size == 2:
+        test_generator = joined_generator.JoinedGenerator2View(cats_vs_dogs_test_generator, cats_vs_dogs_flipped_test_generator)
+    else:
+        print("Only 2 views available for cats_vs_dogs dataset.")
+        sys.exit()
+
+    # Calculate metrics results
+    if verbose_metrics:
+        _, acc, prec, rec, auc = model.evaluate(test_generator, steps=len(cats_vs_dogs_test_generator), verbose=1)
+        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+        summarize_diagnostics_verbose(history, log_dir)
+    else:
+        _, acc = model.evaluate(test_generator, steps=len(cats_vs_dogs_test_generator), verbose=1)
+        print('\nAccuracy on test set: %.3f' % (acc * 100.0))
+        summarize_diagnostics_base(history, log_dir)
+
+    # plot confusion matrix and results
+    scores = show_results(model, test_generator, log_dir)
+    
+    return acc, scores

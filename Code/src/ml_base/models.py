@@ -55,7 +55,7 @@ def weighted_bincrossentropy(true, pred, weights={0: 1, 1: 3.02}):
         will be penalize 10 times as much as false negatives.
     """
     weight_zero = 1   #weights[0]
-    weight_one = 1 #3.02 #weights[1]
+    weight_one = 3.02 #weights[1]
 
     # calculate the binary cross entropy
     bin_crossentropy = tf.keras.backend.binary_crossentropy(true, pred)

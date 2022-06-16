@@ -87,6 +87,8 @@ xlsx_input_split_filename = base_config["xlsx_input_split_filepath"]
 
 
 # Read varlables from user config
+model_type = user_config["model_type"]
+dataset = user_config["dataset"]
 epochs = user_config["epochs"]
 batch_size = user_config["batch_size"]
 learning_rate = user_config["learning_rate"]
@@ -188,7 +190,7 @@ if __name__=="__main__":
                                                 )
                 # WandbCallback()
             ]
-
+            
             # if model is a single-view model
             if input_size == 1:
                 model, history = train.train_model_single_view(root_image_folder,
@@ -205,39 +207,66 @@ if __name__=="__main__":
                                                 )
 
                 accuracy, scores = evaluation.evaluate_model(root_image_folder,
-                                                         image_size,
-                                                         model,
-                                                         history,
-                                                         log_dir=SUB_DIR,
-                                                         verbose_metrics=verbose_metrics,
+                                                        image_size,
+                                                        model,
+                                                        history,
+                                                        log_dir=SUB_DIR,
+                                                        verbose_metrics=verbose_metrics,
                                                         )
 
             # if model is a multi-view model
             else:
-                model, history = train.train_model_multi_view(root_image_folder,
-                                                image_size,
-                                                callbacks=callbacks,
-                                                verbose_metrics=verbose_metrics,
-                                                model_name=user_config["model_type"],
-                                                early_fusion=early_fusion,
-                                                fusion_technique=fusion_technique,
-                                                input_size=input_size,
-                                                epochs=epochs,
-                                                batch_size=batch_size,
-                                                learning_rate=learning_rate,
-                                                dropout=dropout_value,
-                                                regularization=regularization,
-                                                num_hidden_layers=num_hidden_layers
-                                                )
+                if dataset == "olivine":
+                    model, history = train.train_model_multi_view(root_image_folder,
+                                                    image_size,
+                                                    callbacks=callbacks,
+                                                    verbose_metrics=verbose_metrics,
+                                                    model_name=user_config["model_type"],
+                                                    early_fusion=early_fusion,
+                                                    fusion_technique=fusion_technique,
+                                                    input_size=input_size,
+                                                    epochs=epochs,
+                                                    batch_size=batch_size,
+                                                    learning_rate=learning_rate,
+                                                    dropout=dropout_value,
+                                                    regularization=regularization,
+                                                    num_hidden_layers=num_hidden_layers
+                                                    )
 
-                accuracy, scores = evaluation.evaluate_model_multi_view(root_image_folder,
-                                                         image_size,
-                                                         model,
-                                                         history,
-                                                         log_dir=SUB_DIR,
-                                                         verbose_metrics=verbose_metrics,
-                                                         input_size=input_size
+                    accuracy, scores = evaluation.evaluate_model_multi_view(root_image_folder,
+                                                            image_size,
+                                                            model,
+                                                            history,
+                                                            log_dir=SUB_DIR,
+                                                            verbose_metrics=verbose_metrics,
+                                                            input_size=input_size
+                                                            )
+                else:
+                    # if dataset == "cats_vs_dogs"
+                    model, history = train.train_model_multi_view_cats_vs_dogs(root_image_folder,
+                                                        image_size,
+                                                        callbacks=callbacks,
+                                                        verbose_metrics=verbose_metrics,
+                                                        model_name=user_config["model_type"],
+                                                        early_fusion=early_fusion,
+                                                        fusion_technique=fusion_technique,
+                                                        input_size=input_size,
+                                                        epochs=epochs,
+                                                        batch_size=batch_size,
+                                                        learning_rate=learning_rate,
+                                                        dropout=dropout_value,
+                                                        regularization=regularization,
+                                                        num_hidden_layers=num_hidden_layers
                                                         )
+
+                    accuracy, scores = evaluation.evaluate_model_multi_view_cats_vs_dogs(root_image_folder,
+                                                            image_size,
+                                                            model,
+                                                            history,
+                                                            log_dir=SUB_DIR,
+                                                            verbose_metrics=verbose_metrics,
+                                                            input_size=input_size
+                                                            )
 
             # check if dataset supports segmentation 
             if (class_1_img_folder_xpl_merged != ""):

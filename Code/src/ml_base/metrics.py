@@ -8,6 +8,18 @@ from utils.utils import get_val_test_data
 import tensorflow as tf
 
 
+METRICS = [
+     # tf.keras.metrics.TruePositives(name='tp'),
+     # tf.keras.metrics.FalsePositives(name='fp'),
+     # tf.keras.metrics.TrueNegatives(name='tn'),
+     # tf.keras.metrics.FalseNegatives(name='fn'), 
+      tf.keras.metrics.BinaryAccuracy(name='accuracy'),
+      tf.keras.metrics.Precision(name='precision'),
+      tf.keras.metrics.Recall(name='recall'),
+      tf.keras.metrics.AUC(name='auc'),
+]
+
+
 def calc_iou_score(y_true, y_pred):
     y_true = y_true.flatten()
     y_pred = y_pred.flatten()
@@ -105,19 +117,6 @@ def calc_mean_segmentation_scores_single_input(class_0_img_folder, class_1_img_f
     return [global_mean_iou, olivine_mean_iou, max_olivine_iou, min_olivine_iou]
 
 
-METRICS = [
-     # tf.keras.metrics.TruePositives(name='tp'),
-     # tf.keras.metrics.FalsePositives(name='fp'),
-     # tf.keras.metrics.TrueNegatives(name='tn'),
-     # tf.keras.metrics.FalseNegatives(name='fn'), 
-      tf.keras.metrics.BinaryAccuracy(name='accuracy'),
-      tf.keras.metrics.Precision(name='precision'),
-      tf.keras.metrics.Recall(name='recall'),
-      tf.keras.metrics.AUC(name='auc'),
-]
-
-
-
 def calc_mean_segmentation_scores_dual_input(class_0_img_folder_ppl, 
                                              class_0_img_folder_xpl,
                                              class_1_img_folder_ppl,
@@ -136,6 +135,8 @@ def calc_mean_segmentation_scores_dual_input(class_0_img_folder_ppl,
     valset, testset = get_val_test_data(xlsx_input_split_file)
     predicted_binary_added_heatmaps = np.zeros([0])
     ground_truth_added_heatmaps = np.zeros([0])
+
+    olivine_iou_list = []
 
     # predict heatmaps for olivine images
     for json_file_name in os.listdir(polygon_label_folder):
@@ -158,6 +159,9 @@ def calc_mean_segmentation_scores_dual_input(class_0_img_folder_ppl,
                 # add all ground truth segmentations to one large 1D vector
                 ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
 
+        olivine_iou = calc_iou_score(ground_truth_heatmap, pred_heatmap)
+        olivine_iou_list.append(olivine_iou)
+
     # calculate IoU score for olivine images only
     olivine_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
@@ -176,7 +180,10 @@ def calc_mean_segmentation_scores_dual_input(class_0_img_folder_ppl,
     # calculating the iou value over all images combined 
     global_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
-    return [global_mean_iou, olivine_mean_iou]
+    max_olivine_iou = np.max(olivine_iou_list)
+    min_olivine_iou = np.min(olivine_iou_list)
+
+    return [global_mean_iou, olivine_mean_iou, max_olivine_iou, min_olivine_iou]
 
 
 
@@ -228,6 +235,8 @@ def calc_mean_segmentation_scores_multi_input(class_0_img_folder_ppl_0,
     predicted_binary_added_heatmaps = np.zeros([0])
     ground_truth_added_heatmaps = np.zeros([0])
 
+    olivine_iou_list = []
+
     # predict heatmaps for olivine images
     for json_file_name in os.listdir(polygon_label_folder):
         img_name = get_json_img_name(json_file_name)
@@ -258,6 +267,9 @@ def calc_mean_segmentation_scores_multi_input(class_0_img_folder_ppl_0,
                 # add all ground truth segmentations to one large 1D vector
                 ground_truth_added_heatmaps = np.concatenate((ground_truth_added_heatmaps, ground_truth_heatmap.flatten()), axis=None)
 
+        olivine_iou = calc_iou_score(ground_truth_heatmap, pred_heatmap)
+        olivine_iou_list.append(olivine_iou)
+
     # calculate IoU score for olivine images only
     olivine_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
@@ -282,4 +294,7 @@ def calc_mean_segmentation_scores_multi_input(class_0_img_folder_ppl_0,
     # calculating the iou value over all images combined 
     global_mean_iou = calc_iou_score(ground_truth_added_heatmaps, predicted_binary_added_heatmaps)
 
-    return [global_mean_iou, olivine_mean_iou]
+    max_olivine_iou = np.max(olivine_iou_list)
+    min_olivine_iou = np.min(olivine_iou_list)
+
+    return [global_mean_iou, olivine_mean_iou, max_olivine_iou, min_olivine_iou]
