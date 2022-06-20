@@ -1,7 +1,7 @@
 # Project config file
 global:
     img_size: 224
-    max_seed_value: 18
+    max_seed_value: 12
     single_run: 1 # check if you only want to train on one specific seed value
 
 # Define dataset specific parameters
