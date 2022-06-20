@@ -11,22 +11,11 @@ from tensorflow.keras.preprocessing.image import array_to_img, img_to_array
 
 
 def generate_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
-    # First, we create a model that maps the input image to the activations
+    # First, a new model is created that maps the input image to the activations
     # of the last conv layer as well as the output predictions
     grad_model = Model([model.inputs], [model.get_layer(last_conv_layer_name).output, model.output])
 
-    # try to create single input evaluation model for trained multi input model
-    # single_image_input = Input(shape=(224,224,3))
-    # x = model.layers[1](single_image_input)
-    # for new_layer in model.layers[2:-1]:
-    #     x = new_layer(x)
-    # output_layer = Dense(1, activation="sigmoid")(x)
-    # temp_model = Model(inputs=single_image_input, outputs=output_layer)
-    # grad_model = Model([temp_model.inputs], [temp_model.get_layer(last_conv_layer_name).output, temp_model.output])
-
-    # print(f"Grad-CAM Model Summary: {grad_model.summary()}")
-
-    # Then, we compute the gradient of the top predicted class for our input image
+    # Then, the gradient of the top predicted class for our input image is computed
     # with respect to the activations of the last conv layer
     with tf.GradientTape() as tape:
         last_conv_layer_output, preds = grad_model(img_array)
@@ -42,14 +31,14 @@ def generate_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=
     # over a specific feature map channel
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
-    # We multiply each channel in the feature map array
+    # Each channel in the feature map array is multiplied
     # by "how important this channel is" with regard to the top predicted class
-    # then sum all the channels to obtain the heatmap class activation
+    # then all the channels are summed up to obtain the heatmap class activation
     last_conv_layer_output = last_conv_layer_output[0]
     heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
     heatmap = tf.squeeze(heatmap)
 
-    # For visualization purpose, we will also normalize the heatmap between 0 & 1
+    # For visualization purpose, the heatmap is normalized between 0 & 1
     heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
     return heatmap.numpy()
 

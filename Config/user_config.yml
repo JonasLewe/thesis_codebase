@@ -3,8 +3,8 @@ parent_dir: "debugging" # Default: "debugging"
 dataset: "olivine"      # Default: "olivine"
 model_type: "base"       # Choices: "base", "vgg", "resnet50", "unet"
 early_fusion: 0         # 0: mid-fusion, 1: early-fusion
-fusion_technique: 3     # 0: Max, 1: Avg, 2: Sum, 3: Concat
-input_size: 2           # 1: Single xpl view, 2: Dual ppl&xpl view, 3: Three xpl views 6: Full size 6 input ppl/xpl model
+fusion_technique: 0     # 0: Max, 1: Avg, 2: Sum, 3: Concat
+input_size: 1           # 1: Single view, 2: Dual ppl&xpl view, 3: Three xpl views 6: Full size 6 input ppl/xpl model
 verbose_metrics: 1      # 0: Off, 1: On
 epochs: 45              # Default: 45
 batch_size: 8           # Default: 8

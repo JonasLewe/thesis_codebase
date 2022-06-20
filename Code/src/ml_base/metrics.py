@@ -64,6 +64,7 @@ def calc_mean_segmentation_scores_single_input(class_0_img_folder, class_1_img_f
     ground_truth_added_heatmaps_non_olivine = np.zeros([0])
 
     olivine_iou_list = []
+    non_olivine_iou_list = []
 
     # predict heatmaps for olivine images
     for json_file_name in os.listdir(polygon_label_folder):

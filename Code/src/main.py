@@ -59,6 +59,14 @@ root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["
 # root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data_small"])
 # root_image_folder = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["input_data_undersampled"])
 
+# test non-merged xpl data
+# root_image_folder = f"{root_image_folder}_xpl_0"
+
+# test merged ppl data
+root_image_folder = f"{root_image_folder}_ppl"
+
+
+
 class_0_img_folder_ppl_merged = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_ppl_merged"])
 class_0_img_folder_ppl_0 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_ppl_0"])
 class_0_img_folder_ppl_30 = os.path.join(ROOT_DIR, base_config[user_config["dataset"]]["class_0_img_folder_ppl_30"])
@@ -180,11 +188,11 @@ if __name__=="__main__":
             # set callbacks for training
             callbacks = [
                 tf.keras.callbacks.TensorBoard(log_dir=TENSORBOARD_DIR, profile_batch=0),
-                tf.keras.callbacks.EarlyStopping(monitor="val_loss",
+                tf.keras.callbacks.EarlyStopping(monitor="val_accuracy",
                                                  min_delta=0,
-                                                 patience=45,
+                                                 patience=12,
                                                  verbose=1,
-                                                 mode="min",
+                                                 mode="max",
                                                  baseline=None,
                                                  restore_best_weights=True,
                                                 )
